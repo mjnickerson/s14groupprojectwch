@@ -1,0 +1,38 @@
+
+The Dual_SensorTile_Acquire.sh system is developed to enable simultaneous data 
+acqusisition from dual SensorTile systems.
+
+To avoid resource conflict limitations, this system is designed to start two
+data acquisition sessions with a 1 second delay in execution.
+
+Dual_SensorTile_Acquisition.sh will first call motion_data_sensortile_1.sh at 
+TRIGGER_TIME, and then call motion_data_sensortile_2.sh at TRIGGER_TIME2, which 
+is TRIGGER_TIME+1. 
+
+There is, therefore, a one second time offset between SensorTile 1 and Sensor-Tile 2
+data acquisition processes.
+
+This synchronization may then be corrected according to sample times after data
+acquisition is complete by the applications using the acquired data.
+
+By default settings, SensorTile 1 will stop when SensorTile 2 stops.
+
+Thus SensorTile 1 will acquire more data than for SensorTile 2. 
+
+The Dual_SensorTile_Acquisition.sh script then continues to execute sample_sync.c
+
+This routine determines the difference between sample count between the two acquired
+data files.
+
+Any difference in sample count results from differences in the start time of 
+acquisition by the two SensorTiles.
+
+Synchronization is enabled by removing samples from the file of greater length 
+to account for the difference in start time.
+
+The two output files, motion_data_output_1.csv and motion_data_output_2.csv
+contain synchronized data.
+
+
+
+

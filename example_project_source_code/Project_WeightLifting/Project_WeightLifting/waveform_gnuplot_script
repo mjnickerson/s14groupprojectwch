@@ -1,0 +1,7 @@
+set term png enhanced size 1280,1024 font "Arial,20"
+set output 'waveform_plot.png'
+set key autotitle columnhead
+set pointsize 4 
+set xlabel "Time (sec)" 
+set ylabel "Acceleration (milli-g)" 
+plot 'waveform_peaks_output_x.csv' using 1:2 with points, 'waveform_gnuplot_x.csv' using 1:2 with lines, 'waveform_peaks_output_y.csv' using 1:2 with points, 'waveform_gnuplot_y.csv' using 1:2 with lines

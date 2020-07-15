@@ -1,0 +1,84 @@
+
+****************************************************************
+OVERVIEW
+****************************************************************
+
+The cross-correlation system is based on 
+
+1)  waveform_feature_xcorr.cp
+2)  compute_cross_correlation.shf
+
+Data input files for this system requires use of:
+
+Acquire_LowPass_Continuous.c Version 1.1 for data acquisition.
+This update includes the creation of sample time data in the output motion_output.dat file
+
+****************************************************************
+INSTALLATION
+****************************************************************
+
+Usage of this system requires the gnuplot tool.
+
+This should be installed on the Beaglebone at this time
+
+You should also have created a directory on your Beaglebone:
+
+> mkdir feature_extraction_correlation
+
+and entered this directory
+
+> cd feature_extraction_correlation
+
+and added the appropriate files from the download link in previous steps.
+
+The required files are listed at the end of this README
+
+Compile the waveform_feature_xcorr.c routine with make 
+within the feature_extraction_correlation  directory.
+
+> make waveform_feature_xcorr
+
+
+***************************************************************
+USAGE
+***************************************************************
+
+Execute the shell script using one of the included example data files.
+
+sh compute_cross_correlation.sh motion_data_output_square_pattern.csv motion_data_output_square_pattern.csv 20
+
+After execution, two graphics file will be placed in the /www/html/graphics directory
+
+Access the generated graphic from any location sharing network access to your BeagleBone.
+
+Direct your web browser to :
+
+http://<Beaglebone IP Address>:8080/graphics/xcorr_cross_corr_file_1_x_axis-file_2_y_axis_plot.png
+
+This shows the cross-correlation between the X and Y axes of file 1 and file 2 data.
+Since these are the same data set (file 1 and file 2 are the same file) then this 
+computes cross-correlation between the X and Y axes of the square pattern motion data.
+
+Also, direct your web browser to:
+
+http:/<BeagleBone IP Address>:8080/graphics/xcorr_autocorr_plot.png
+
+This shows the autocorrelation of X and Y axes for both data files.
+
+****************************************************************
+REQUIRED FILES
+****************************************************************
+
+Files that must be present in your directory include:
+
+****************************************************************
+
+compute_cross_correlation.sh
+motion_data_output_circle_pattern.csv
+motion_data_output_linear_x_double_pattern.csv
+motion_data_output_linear_y_double_pattern.csv
+motion_data_output_simulation.csv
+motion_data_output_square_pattern.csv
+waveform_feature_xcorr.c
+xcorr_autocorr_gnuplot_script
+xcorr_cross_corr_gnuplot_script

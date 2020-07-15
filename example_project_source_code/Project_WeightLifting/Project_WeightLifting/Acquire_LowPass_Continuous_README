@@ -1,0 +1,6 @@
+
+# Compile with
+
+gcc -o Acquire_LowPass_Continuous Acquire_LowPass_Continuous.c -lm -lc -lliquid
+
+
