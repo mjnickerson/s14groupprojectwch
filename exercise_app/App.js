@@ -3,6 +3,9 @@ import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
 import { Accelerometer } from 'expo-sensors';
 import Constants from 'expo-constants';
 
+// Load the run_impulse module
+//const Module = require('./edge_impulse/run_impulse.js'); //don't think its supposed to be a module, but a function.
+import run_impulse from './edge_impulse/run_impulse.js';
 
 //TEMPORARY VARIABLES FOR COUNTER - DELETE ME
 var simulatedReturnClasses = [(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12)];
@@ -20,7 +23,7 @@ var countOfExercise = "< NO ACCELEROMETER CONNECTED >";
 var displayImprovementFeedback = "< ERROR >";
 var sensorPosition = "< UNKNOWN >";
 var connectedText = "< DICONNECTED >";
-var accDataDump = "<no raw data>"
+var accDataDump = "<no raw data>";
 
 //classification and display variables
 
@@ -54,7 +57,7 @@ var class_improvement_text_source = ["Great job!\nYou are doing the Pulse sit up
 var class_Sensor_Position_source = ["Head","Head","Head","Head","Head","Head","Arm","Arm","Arm","Arm","Arm","Arm","Not Sure...",""]
 var class_Sensor_Image_Source = ['assets/headband_icon.png','assets/headband_icon.png','assets/headband_icon.png','assets/armband_icon.png','assets/armband_icon.png','assets/armband_icon.png','assets/headband_icon.png','assets/headband_icon.png','assets/headband_icon.png','assets/armband_icon.png','assets/armband_icon.png','assets/armband_icon.png','assets/were_not_sure.png','assets/exercise_icon.png']
 
-var returnedPredictions = [-.11,(13-1)];
+var returnedPredictions = [-.11,(13-1)]; //vector that stores returned predictions from edge_impulse.js
 
 export default function App() {
 
@@ -84,7 +87,26 @@ export default function App() {
     //if we arent confident and think the prediction is unclear
     setCurrentClassification(currentClassification => (13-1)); //say we don't know (class 13)
   }
-  
+
+function round(n) {
+  if (!n) {
+    return 0;
+  }
+  return Math.floor(n * 100) / 100;
+  }
+
+  function getRandomProbability() {
+    return (Math.random() - 0.02); //random number from -.02 to 0.98
+  }
+
+  function getRandomClass() {
+    return Math.floor(Math.random() * Math.floor(12));
+  }
+
+  function getRandomVector() {
+    return [getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability()];
+  }
+
   useEffect(() => {
     _Toggle();
   }, []);
@@ -111,16 +133,43 @@ export default function App() {
       clearInterval(intervalQuarterSec);
     }
     return () => clearInterval(intervalQuarterSec);
-  }, [isExercising, accDataArray]);
+  }, [currentData, x,y,z,adjustment_factor, isExercising, accDataArray]);
 
 //this feeds data into the edge impulse model every 2 seconds 
   useEffect(() => {
     let intervalTwoSec = null;
-    if (isExercising) {
+    if (isExercising) { 
         intervalTwoSec = setInterval(() => { //two second interval
         setCurrentData(currentData => accDataArray); //record 2 seconds of data
         countOfExercise => currentData; 
-        //here to send to run_impulse.js function //pass it to run_impulse.js
+
+        //here to send currentData to run_impulse.js function //pass it to run_impulse.js
+
+        //SEND:
+        //node run_impulse.js "-19.8800, -0.6900, 8.2300, -17.6600, -1.1300, 5.9700, ..."
+        //run_impulse.js "currentData"; //<-- currentData converted to a string
+        //run_impulse.js(currentData);
+        //run_impulse(currentData);
+        
+        //RECIEVE:
+        //{
+        //  anomaly: 0.000444,
+        //  results: [
+        //    { label: 'Class_1', value: 0.015319 },
+        //    { label: 'Class_2', value: 0.000444 },
+        //    { label: 'Class_3', value: 0.006182 },
+        //    { label: 'Class_4', value: 0.978056 },
+        //    { label: 'Class_5', value: 0.015319 }.
+        //    { label: 'Class_6', value: 0.000444 },
+        //    { label: 'Class_7', value: 0.000444 },
+        //    { label: 'Class_8', value: 0.006182 },
+        //    { label: 'Class_9', value: 0.000444 },
+        //    { label: 'Class_10', value: 0.006182 },
+        //    { label: 'Class_11', value: 0.000444 },
+        //    { label: 'Class_12', value: 0.000444 }
+        //  ]
+        //}
+
         setaccDataArray(accDataArray => []); //clear the 2 second recording
       }, processTimeDelta);
     }
@@ -129,14 +178,14 @@ export default function App() {
       clearInterval(intervalTwoSec);
     }
     return () => clearInterval(intervalTwoSec);
-  }, [isExercising, currentData]); 
+  }, [accDataArray, isExercising, currentData]); 
 
 
 //this 'processes classifications from edge impulse model every 2 seconds
 useEffect(() => {
     let intervalFourSec = null;
     if (isExercising) {
-        intervalFourSec = setInterval(() => { //two second interval
+        intervalFourSec = setInterval(() => { //four second interval
 
         //get classification 
         returnedPredictions = selectPredictedClass(simulatedReturnClasses); //returnedPredictions is an array of [highest_probabily, guessedClass]
@@ -144,7 +193,7 @@ useEffect(() => {
         setCurrentClassification(currentClassification => returnedPredictions[1]); //set classification
 
         if (returnedPredictions[0] < 0.20) { //if we arent at least 20% confident
-          returnUnclearPrediction();
+          returnUnclearPrediction(); //set to class 13
         }
 
       }, reportTimeDelta);
@@ -156,7 +205,7 @@ useEffect(() => {
       displayImprovementFeedback => ""
     }
     return () => clearInterval(intervalFourSec);
-  }, [isExercising, currentClassification]);
+  }, [currentData, isExercising, currentClassification]);
 
 
   //STATE CONSTANTS
@@ -169,11 +218,11 @@ useEffect(() => {
   };
 
   //function of start buttons
-  toggleEx = () => {
+  const toggleEx = () => {
     setIsExercising(!isExercising);
   }
   
-  resetEx = () => {
+  const resetEx = () => {
       setCurrentData(0);
       setIsExercising(false);
       setCurrentClassification(14-1);
@@ -279,25 +328,6 @@ useEffect(() => {
     </Text>
   </View>   
   );
-}
-
-function round(n) {
-  if (!n) {
-    return 0;
-  }
-  return Math.floor(n * 100) / 100;
-}
-
-function getRandomProbability() {
-  return (Math.random() - 0.02); //random number from -.02 to 0.98
-}
-
-function getRandomVector() {
-  return [getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability()];
-}
-
-function getRandomClass() {
-  return Math.floor(Math.random() * Math.floor(12));
 }
 
 const styles = StyleSheet.create({
