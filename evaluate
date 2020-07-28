@@ -1,0 +1,12 @@
+import requests
+
+url = "https://studio.edgeimpulse.com/v1/api/3788/jobs/evaluate"
+
+headers = {
+    'accept': "application/json",
+    'x-api-key': "ei_849d2c3807110a9d8e22121a536d59b9cc07f46e93e23214"
+    }
+
+response = requests.request("POST", url, headers=headers)
+
+print(response.text)
