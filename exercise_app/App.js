@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Image, RNFS } from 'react-native';
 import { Accelerometer } from 'expo-sensors';
 import Constants from 'expo-constants';
 
-// Load the run_impulse module
-//const Module = require('./edge_impulse/run_impulse.js'); //don't think its supposed to be a module, but a function.
-import run_impulse from './edge_impulse/run_impulse.js';
 
 //TEMPORARY VARIABLES FOR COUNTER - DELETE ME
-var simulatedReturnClasses = [(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12)];
+var simulatedRawReturnData = "{ anomaly: 0, results: [ { label: 'Class_1', value: 0.01359375 }, { label: 'Class_10', value: 0.1034375 }, { label: 'Class_11', value: 0.1178125 }, { label: 'Class_12', value: 0.1278125 }, { label: 'Class_2', value: 0.02546875 }, { label: 'Class_3', value: 0.0378125 }, { label: 'Class_4', value: 0.0434375 }, { label: 'Class_5', value: 0.0534375 }, { label: 'Class_6', value: 0.0646875 }, { label: 'Class_7', value: 0.0771875 }, { label: 'Class_8', value: 0.0846875 }, { label: 'Class_9', value: 0.0946875 }] }"
+//var simulatedReturnClasses = [(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12)];
+var randomReturn = [];
 var testForceClassGuess = (14-1);
 
 //declare static variables and routines
@@ -24,6 +23,7 @@ var displayImprovementFeedback = "< ERROR >";
 var sensorPosition = "< UNKNOWN >";
 var connectedText = "< DICONNECTED >";
 var accDataDump = "<no raw data>";
+var returnClassDataDump = "<no raw data>";
 
 //classification and display variables
 
@@ -69,6 +69,8 @@ export default function App() {
   const [situpsCount, setsitupsCount] = useState([0,0]); //vector that records count of exercises done
   const [maxClassPercent, setmaxClassPercent] = useState(-0.1); //default to negative 100% //may not use this or need this
   const [guessedClass, setguessedClass] = useState(13); //starting state 13, we dont know //may not use this or need this
+  var returnedData = []; //vector of returned data from EC2 Instance
+
 
   function selectPredictedClass(predictedVector) {
     var i;
@@ -88,7 +90,7 @@ export default function App() {
     setCurrentClassification(currentClassification => (13-1)); //say we don't know (class 13)
   }
 
-function round(n) {
+  function round(n) {
   if (!n) {
     return 0;
   }
@@ -96,7 +98,7 @@ function round(n) {
   }
 
   function getRandomProbability() {
-    return (Math.random() - 0.02); //random number from -.02 to 0.98
+    return (Math.random() - 0.6); //random number from -.02 to 0.98
   }
 
   function getRandomClass() {
@@ -106,6 +108,60 @@ function round(n) {
   function getRandomVector() {
     return [getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability()];
   }
+
+
+  function extractProbabilities(rawData) { //import in text format
+    //return vector of probabilities by class.
+    //regular expressions:
+    var splitData = rawData.replace(/(\.+|\:|\!|\?)(\"*|\'*|\)*|}*|]*)(\s|\n|\r|\r\n)/gm, "$1$2|").split(" ")     //split data into different lines
+    var regExZero =  /\+?\d+/; //find empty zeros
+    var regExDecimal = /\d+\.\d{0,4}/  //find decimal strings
+
+    //empty dataframes
+    var filteredData = [];
+    var unorderedData = [];
+    var probArray = [];
+    var probString = [];
+    var returnedClassifications = [];
+
+    for (var linenum = 0; linenum < splitData.length; linenum++) {
+      var regExResultZero = splitData[linenum].match(regExZero);
+      var regExResultDec = splitData[linenum].match(regExDecimal);
+      if (regExResultDec) { //if we extracted a decimal
+          filteredData = filteredData.concat(regExResultDec);
+      } else if (!regExResultDec && regExResultZero) { //if we didnt find a decimal, but found a zero
+          filteredData = filteredData.concat(regExResultZero);
+      }
+    }
+
+    filteredData.shift(); //get rid of the first value, which is 'anomaly'
+
+    //remove the class labels, and export only the probabilities
+    // DANGER: IF THEY ARE NOT IN NUMERICAL ORDER, WE WILL NOT KNOW WHICH CLASS IS WHICH!!!!
+    for (var arrayItem = 0; arrayItem < filteredData.length; arrayItem++) {
+      if (arrayItem % 2 != 0) {
+       unorderedData = unorderedData.concat(filteredData[arrayItem]);
+      }
+    }
+
+    //because the string comes out in alphabetical order, "10" comes after "1" not after "9"
+    //therefore 10,11,12 must be moved to the end of the string, and the string rebuilt
+    probArray[0] = unorderedData[0];
+    for (var arrayItemss = 1; arrayItemss < 4; arrayItemss++) {
+      probArray[arrayItemss+8] = unorderedData[arrayItemss];
+    }
+    for (var arrayItemzz = 4; arrayItemzz < 12; arrayItemzz++) {
+      probArray[arrayItemzz-3] = unorderedData[arrayItemzz];
+    }
+
+    //turn the probabilities into a comma separated string, for ease of processing
+    for (var arrayItemmm = 0; arrayItemmm < probArray.length; arrayItemmm++) {
+      probString = probString.concat(probArray[arrayItemmm],", ");
+    }  
+
+    return [probArray, probString]; //return an Array of probabilities, and an easy to print String)
+} 
+
 
   useEffect(() => {
     _Toggle();
@@ -133,7 +189,8 @@ function round(n) {
       clearInterval(intervalQuarterSec);
     }
     return () => clearInterval(intervalQuarterSec);
-  }, [currentData, x,y,z,adjustment_factor, isExercising, accDataArray]);
+  }, [isExercising, accDataArray]);
+
 
 //this feeds data into the edge impulse model every 2 seconds 
   useEffect(() => {
@@ -145,30 +202,13 @@ function round(n) {
 
         //here to send currentData to run_impulse.js function //pass it to run_impulse.js
 
+        //POST DATA TO AWS
+
         //SEND:
         //node run_impulse.js "-19.8800, -0.6900, 8.2300, -17.6600, -1.1300, 5.9700, ..."
         //run_impulse.js "currentData"; //<-- currentData converted to a string
         //run_impulse.js(currentData);
         //run_impulse(currentData);
-        
-        //RECIEVE:
-        //{
-        //  anomaly: 0.000444,
-        //  results: [
-        //    { label: 'Class_1', value: 0.015319 },
-        //    { label: 'Class_2', value: 0.000444 },
-        //    { label: 'Class_3', value: 0.006182 },
-        //    { label: 'Class_4', value: 0.978056 },
-        //    { label: 'Class_5', value: 0.015319 }.
-        //    { label: 'Class_6', value: 0.000444 },
-        //    { label: 'Class_7', value: 0.000444 },
-        //    { label: 'Class_8', value: 0.006182 },
-        //    { label: 'Class_9', value: 0.000444 },
-        //    { label: 'Class_10', value: 0.006182 },
-        //    { label: 'Class_11', value: 0.000444 },
-        //    { label: 'Class_12', value: 0.000444 }
-        //  ]
-        //}
 
         setaccDataArray(accDataArray => []); //clear the 2 second recording
       }, processTimeDelta);
@@ -178,24 +218,46 @@ function round(n) {
       clearInterval(intervalTwoSec);
     }
     return () => clearInterval(intervalTwoSec);
-  }, [accDataArray, isExercising, currentData]); 
+  }, [isExercising, currentData]); 
 
 
-//this 'processes classifications from edge impulse model every 2 seconds
+//this 'processes classifications from edge impulse model every 4 seconds
 useEffect(() => {
     let intervalFourSec = null;
     if (isExercising) {
         intervalFourSec = setInterval(() => { //four second interval
 
+        //GET DATA FROM AWS;
+        returnedData = simulatedRawReturnData;
+        //RECIEVE, TEXT IN THIS FORMAT:
+        //{
+        //  anomaly: 0.000444,
+        //  results: [
+        //    { label: 'Class_1', value: 0.015319 },
+        //    { label: 'Class_10', value: 0.006182 },
+        //    { label: 'Class_11', value: 0.000444 },
+        //    { label: 'Class_12', value: 0.000444 }
+        //    { label: 'Class_2', value: 0.000444 },
+        //    { label: 'Class_3', value: 0.006182 },
+        //    { label: 'Class_4', value: 0.978056 },
+        //    { label: 'Class_5', value: 0.015319 }.
+        //    { label: 'Class_6', value: 0.000444 },
+        //    { label: 'Class_7', value: 0.000444 },
+        //    { label: 'Class_8', value: 0.006182 },
+        //    { label: 'Class_9', value: 0.000444 },
+        //  ]
+        //}
+
+        //clean text recieved into an array we can use  (extractProbabilities returns [probArray, probString], where probString is formatted)
+        var returnedClassArray = extractProbabilities(returnedData)[0]; //take only the first part of array, an inner array of class prediction probs
         //get classification 
-        returnedPredictions = selectPredictedClass(simulatedReturnClasses); //returnedPredictions is an array of [highest_probabily, guessedClass]
-
-        setCurrentClassification(currentClassification => returnedPredictions[1]); //set classification
-
+        returnedPredictions = selectPredictedClass(returnedClassArray); //returnedPredictions is an array of [highest_probabily, guessedClass]
+        //set classification
+        setCurrentClassification(currentClassification => returnedPredictions[1]); 
+        //validate classification
         if (returnedPredictions[0] < 0.20) { //if we arent at least 20% confident
           returnUnclearPrediction(); //set to class 13
         }
-
       }, reportTimeDelta);
     }
     else if (!isExercising && currentData !== 0)
@@ -205,7 +267,7 @@ useEffect(() => {
       displayImprovementFeedback => ""
     }
     return () => clearInterval(intervalFourSec);
-  }, [currentData, isExercising, currentClassification]);
+  }, [isExercising, currentClassification]);
 
 
   //STATE CONSTANTS
@@ -218,18 +280,20 @@ useEffect(() => {
   };
 
   //function of start buttons
-  const toggleEx = () => {
+  toggleEx = () => {
     setIsExercising(!isExercising);
   }
   
-  const resetEx = () => {
+  resetEx = () => {
       setCurrentData(0);
       setIsExercising(false);
       setCurrentClassification(14-1);
       setmaxClassPercent(-0.1)
       setguessedClass(14-1);
       setsitupsCount([0,0]);
-      simulatedReturnClasses = getRandomVector(); //temporary to randomize function data
+      //simulatedReturnClasses = getRandomVector(); //temporary to randomize function data
+      randomReturn = getRandomVector(); //temporary to randomize function data
+      simulatedRawReturnData = "{ anomaly: 0, results: [ { label: 'Class_1', value: " + randomReturn[0] + " }, { label: 'Class_10', value: " + randomReturn[9] + " }, { label: 'Class_11', value: " + randomReturn[10] + " }, { label: 'Class_12', value: " + randomReturn[11] + " }, { label: 'Class_2', value: " + randomReturn[1] + " }, { label: 'Class_3', value: " + randomReturn[2] + " }, { label: 'Class_4', value: " + randomReturn[3] + " }, { label: 'Class_5', value: " + randomReturn[4] + " }, { label: 'Class_6', value: " + randomReturn[5] + " }, { label: 'Class_7', value: " + randomReturn[6] + " }, { label: 'Class_8', value: " + randomReturn[7] + " }, { label: 'Class_9', value: " + randomReturn[8] + " }] }" //temporarily create random return string from AWS Node
   }
 
   //function of accelerometer 
@@ -260,11 +324,12 @@ useEffect(() => {
   }
 
   if (connectedText == "CONNECTED!") { 
-      accDataDump = currentData;
-      countOfExercise = situpsCount;
       currentExerciseRoutine = class_routine_text_source[currentClassification];
+      countOfExercise = situpsCount; 
       displayImprovementFeedback = class_improvement_text_source[currentClassification];
       sensorPosition = class_Sensor_Position_source[currentClassification];
+      accDataDump = currentData; //test this function.
+      returnClassDataDump = extractProbabilities(simulatedRawReturnData)[1]; //test this function.
   }
 
   //APP DISPLAY
@@ -280,10 +345,10 @@ useEffect(() => {
       <View style={styles.outerContainer}>
         <View style={styles.buttonContainer}>
           <TouchableOpacity onPress={this.toggleEx} style={styles.onoffbutton}>
-            <Text>{isExercising ? '> Stop Exercise <' : 'Start Exercising!'}</Text>
+            <Text>{isExercising ? '> Pause Exercise <' : 'Start Exercising!'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={this.resetEx} style={styles.resetbutton}>
-            <Text>Reset</Text>
+          <TouchableOpacity onPress={this.resetEx} style={styles.endbutton}>
+            <Text>End Exercise</Text>
           </TouchableOpacity>
         </View>
         <Text style={styles.text}>
@@ -323,8 +388,11 @@ useEffect(() => {
           </Text> 
       </View>
     </View>
-    <Text style={styles.distext}>
-        Accelerometer Data Dump: {accDataDump}
+    <Text style={styles.minitext}>
+        Accelerometer Data - Input: {accDataDump}
+    </Text>
+        <Text style={styles.minitext}>
+        Returned Classifications - Output: {returnClassDataDump}
     </Text>
   </View>   
   );
@@ -360,10 +428,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   onoffbutton: {
-    flex: 4,
+    flex: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#def1fc',
+    backgroundColor: 'lightgreen',
     padding: 20,
     margin: 5,
     borderRadius: 10,
@@ -377,7 +445,21 @@ const styles = StyleSheet.create({
     margin: 5,
     borderRadius: 10,
   },
+  endbutton: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'pink',
+    padding: 10,
+    margin: 5,
+    borderRadius: 10,
+  },
   text: {
+    textAlign: 'center',
+  },
+  webtext: {
+    margin: 0,
+    fontSize: 12,
     textAlign: 'center',
   },
   paragraph: {
@@ -391,6 +473,13 @@ const styles = StyleSheet.create({
     margin: 10,
     marginTop: 0,
     fontSize: 16,
+    fontWeight: 'italic',
+    textAlign: 'center',
+  },
+  minitext: {
+    margin: 10,
+    marginTop: 0,
+    fontSize: 12,
     fontWeight: 'italic',
     textAlign: 'center',
   },

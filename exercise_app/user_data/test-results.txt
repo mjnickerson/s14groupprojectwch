@@ -1,0 +1,15 @@
+{ anomaly: 0,
+  results:
+   [ { label: 'Class_1', value: 0.01359375 },
+     { label: 'Class_10', value: 0.1034375 },
+     { label: 'Class_11', value: 0.1178125 },
+     { label: 'Class_12', value: 0.1278125 },
+     { label: 'Class_2', value: 0.02546875 },
+     { label: 'Class_3', value: 0.0378125 },
+     { label: 'Class_4', value: 0.0434375 },
+     { label: 'Class_5', value: 0.0534375 },
+     { label: 'Class_6', value: 0.8946875 },
+     { label: 'Class_7', value: 0.0771875 },
+     { label: 'Class_8', value: 0.0846875 },
+     { label: 'Class_9', value: 0.0946875 }]
+ }
