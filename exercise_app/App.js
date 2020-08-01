@@ -3,32 +3,44 @@ import { StyleSheet, Text, TouchableOpacity, View, Image, Alert, ActivityIndicat
 import { Accelerometer } from 'expo-sensors';
 import Constants from 'expo-constants';
 
+//declare static variables and routines
 
 //////// DEMO MODE /////////////////////////////////////////////
 //run a simulation within the app or really connect to server?
-var runSim = false; //flag of "start exercising" running// DISCONNECTS THE APP FROM THE EC2 SERVER CURL PROXY and LOADS SIMULATED RANDOMIZED DATA
-var rapidRandom = false; //rapidly and randomly change classifications to test configuration;
-var timeTillNextRandomClass = 25; //seconds, actual desired time elapsed, till we randomly select new class; Used for diagonstrics;
+var runSim = false; //flag of "start exercising" running // DISCONNECTS THE APP FROM THE EC2 SERVER CURL PROXY and LOADS SIMULATED RANDOMIZED DATA
+var rapidSim = false; //speed up the overall simulation (relies on simulatedRawReturnData);
+var rapidRandom = false; //randomly change classifications directly into engine, regardless of simulatedRawReturnData, to test configuration;
+var simWarning = true; //show a warning to the user its running in simulation mode?
+var timeTillNextRandomClass = (17); //seconds, actual desired time elapsed, till we randomly select new class; Used for diagonstrics;
+var simulatedReturnedSitupCount = 1; //how many situps to add per response period.
+var randomReturn = [];
 ////////////////////////////////////////////////////////////////
 
+////////TEMPORARY VARIABLES FOR COUNTER - DELETE ME ////////////////
+//var simulatedRawReturnData = "{ anomaly: 0, results: [ { label: 'Class_1', value: 0.01359375 }, { label: 'Class_10', value: 0.1034375 }, { label: 'Class_11', value: 0.1178125 }, { label: 'Class_12', value: 0.1278125 }, { label: 'Class_2', value: 0.02546875 }, { label: 'Class_3', value: 0.0378125 }, { label: 'Class_4', value: 0.0434375 }, { label: 'Class_5', value: 0.0534375 }, { label: 'Class_6', value: 0.0646875 }, { label: 'Class_7', value: 0.0771875 }, { label: 'Class_8', value: 0.0846875 }, { label: 'Class_9', value: 0.0946875 }] }"
+//var simulatedReturnClasses = [(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12)];
+////////////////////////////////////////////////////////////////
 
 ///// PRECISION THRESHOLD /////////////////////////////////////
 //threshold for classification - when are we unsure?
 var predictionCutoff = 0.25;
 
-//TEMPORARY VARIABLES FOR COUNTER - DELETE ME
-//var simulatedRawReturnData = "{ anomaly: 0, results: [ { label: 'Class_1', value: 0.01359375 }, { label: 'Class_10', value: 0.1034375 }, { label: 'Class_11', value: 0.1178125 }, { label: 'Class_12', value: 0.1278125 }, { label: 'Class_2', value: 0.02546875 }, { label: 'Class_3', value: 0.0378125 }, { label: 'Class_4', value: 0.0434375 }, { label: 'Class_5', value: 0.0534375 }, { label: 'Class_6', value: 0.0646875 }, { label: 'Class_7', value: 0.0771875 }, { label: 'Class_8', value: 0.0846875 }, { label: 'Class_9', value: 0.0946875 }] }"
-//var simulatedReturnClasses = [(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12)];
-var simulatedReturnedSitupCount = 1;
-var randomReturn = [];
-var testForceClassGuess = (14-1);
-
-
-//declare static variables and routines
+///////// TIME INTERVALS ///////////////////////////////
 //time variables
 var collectionTimeDelta = (0.25 * 1000); // every one quarter second, 250 milliseconds
-var processTimeDelta = (2 * 1000); //every 2 seconds, 2000 milliseconds
-var reportTimeDelta = (4 * 1000); //every 4 seconds, 4000 milliseconds
+var processTimeDelta = (5 * 1000); //every 5 seconds, 7000 milliseconds
+var reportTimeDelta = (3 * 1000); //every 3 seconds, 3000 milliseconds
+
+if (runSim) { //adjust runSim time for the set classification response time
+  timeTillNextRandomClass = (timeTillNextRandomClass - (processTimeDelta/1000) - (reportTimeDelta/1000))
+}
+
+if (rapidSim) { //speed up the processing pace
+  processTimeDelta = (processTimeDelta * 0.20);
+  reportTimeDelta = (reportTimeDelta * 0.40);
+  timeTillNextRandomClass = 4; //
+}
+///////////////////////////////////////////////////////
 
 //text variables, and default display (error mode)
 var currentExerciseRoutine = "<!!!!!! ERROR !!!!!!>";
@@ -92,6 +104,7 @@ var randomWelcomeText = ['TO FEEL THE BURN!', 'FOR TOTAL AWESOMENESS!', 'TO KICK
 var returnedPredictions = [-.11,(13-1)]; //vector that stores returned predictions from edge_impulse.js
 var situpsCount = [0,0,0,0,0,0,0,0,0,0,0,0]; //[pulse correct, pulse incorrect, v correct, v incorrect]; initial state, none done
 var mostDoneSitup = 9999; //initial state, error code
+var mostDoneSitupType = 9999;
 var situpStreak = [0,(13-1)]; //[count, class]latest most done situp, used for vibration messaging
 var lastClass = (13-1); //check the last class categorized
 var situpStreakAlertActive = false; //flag to prevent multiple popups
@@ -274,26 +287,26 @@ export default function App() {
 
   //this collects accelerometer data every 1/4 second
   useEffect(() => {
-    let intervalQuarterSec = null;
+    let intervalCollectAccXYZ = null;
     if (isExercising) {
-      intervalQuarterSec = setInterval(() => { //quarter second interval
+      intervalCollectAccXYZ = setInterval(() => { //quarter second interval
         setaccDataArray(accDataArray => accDataArray.concat(round(x*adjustment_factor),",",round(y*adjustment_factor),",",round(z*adjustment_factor),","));
         setelapsedTime(elapsedTime => elapsedTime + 0.25);
       }, collectionTimeDelta);
     }
     else if (!isExercising && currentData !== 0)
     {
-      clearInterval(intervalQuarterSec);
+      clearInterval(intervalCollectAccXYZ);
     }
-    return () => clearInterval(intervalQuarterSec);
+    return () => clearInterval(intervalCollectAccXYZ);
   }, [isExercising, accDataArray, elapsedTime]);
 
 
 //this feeds data into the edge impulse model every 2 seconds
   useEffect(() => {
-    let intervalTwoSec = null;
+    let intervalGatherAndSend= null;
     if (isExercising) {
-        intervalTwoSec = setInterval(() => { //two second interval
+        intervalGatherAndSend = setInterval(() => { //two second interval
         setCurrentData(currentData => accDataArray); //record 2 seconds of data
         currentData => accDataArray //record the data to display
 
@@ -322,17 +335,17 @@ export default function App() {
     }
     else if (!isExercising && currentData !== 0)
     {
-      clearInterval(intervalTwoSec);
+      clearInterval(intervalGatherAndSend);
     }
-    return () => clearInterval(intervalTwoSec);
+    return () => clearInterval(intervalGatherAndSend);
   }, [isExercising, runSimulation, currentData]);
 
 
 //this processes classifications from edge impulse model every 4 seconds
 useEffect(() => {
-    let intervalFourSec = null;
+    let intervalReceiveAndReport = null;
     if (isExercising) {
-        intervalFourSec = setInterval(() => { //four second interval
+        intervalReceiveAndReport = setInterval(() => { //four second interval
 
         if (!runSimulation) { //if actually sent to run
             //GET DATA FROM AWS:
@@ -448,11 +461,11 @@ useEffect(() => {
     }
     else if (!isExercising && currentData !== 0)
     {
-      clearInterval(intervalFourSec);
+      clearInterval(intervalReceiveAndReport);
       currentExerciseRoutine => "";
       displayImprovementFeedback => ""
     }
-    return () => clearInterval(intervalFourSec);
+    return () => clearInterval(intervalReceiveAndReport);
   }, [isExercising, runSimulation, returnedClassData, currentClassification]);
 
 
@@ -463,7 +476,7 @@ useEffect(() => {
       if (runSimulation) {
         intervalTillNextRandomClass = setInterval(() => { //sixteen second interval
           setsimulatedRawReturnData([getRandomVector()[0],getRandomVector()[1],getRandomVector()[2],getRandomVector()[3],getRandomVector()[4],getRandomVector()[5],getRandomVector()[6],getRandomVector()[7],getRandomVector()[8],getRandomVector()[9],getRandomVector()[10],getRandomVector()[11]]); //create a random "fake" server return, for simulation)
-        }, ((timeTillNextRandomClass-4-4)*1000));
+        }, (timeTillNextRandomClass*1000));
       }
     }
     else if (!isExercising && currentData !== 0)
@@ -506,12 +519,23 @@ useEffect(() => {
       if (sumOfAllEx == 0) { //if the sum of exercise is zero
         mostDoneSitup = (13-1); //error code
       } else {
-        mostDoneSitup = getMaximumCount(situpsCount) //get the most done situp.
+        mostDoneSitup = getMaximumCount(situpsCount) //get the most done situp, the specific class (what and how).
       }
       totalCountPC = situpsCount[1-1] + situpsCount[4-1]; //pulse correct
       totalCountPI = situpsCount[2-1] + situpsCount[3-1] + situpsCount[5-1] + situpsCount[6-1]; //pulse incorrect
       totalCountVC = situpsCount[7-1] + situpsCount[10-1]; //V correct
       totalCountVI = situpsCount[8-1] + situpsCount[9-1] + situpsCount[11-1] + situpsCount[12-1]; //V incorrect
+
+      //see most done situp by type
+      if ((totalCountPC+totalCountPI) > (totalCountVC+totalCountVI)) {
+          mostDoneSitupType = (1-1); //pulse
+      } else if ((totalCountPC+totalCountPI) < (totalCountVC+totalCountVI)) {
+          mostDoneSitupType = (7-1); //V
+      } else if (mostDoneSitup == (13-1)) {
+          mostDoneSitupType = (13-1); //we dont know
+      } else {
+          mostDoneSitupType = (1-1); //its a tie, just chose pulse
+      }
 
       //see if positiveFeedback is needed (did they do some right but MORE wrong?)
       if (mostDoneSitup !=0 && mostDoneSitup!=3 && mostDoneSitup!=6 && mostDoneSitup!=9) { //if most popular was done incorrectly
@@ -525,6 +549,8 @@ useEffect(() => {
           }
         }
       }
+
+
 
       //compile time summary
       if (elapsedTime < 60) {
@@ -588,13 +614,22 @@ useEffect(() => {
 
   //DISPLAY VARIABLE SETTINGS
 
-  if (_subscribe) { //if the accelerometer is running
+  if (runSimulation && _subscribe) {
+    if (simWarning && rapidRandom || simWarning && rapidSim) {
+      connectedText = "DEMO RAPID SIMULATION MODE!";
+    } else if (simWarning && !rapidRandom || simWarning && !rapidSim) {
+      connectedText = "DEMO MODE!";
+    } else if (!simWarning) {
+      connectedText = "CONNECTED!";
+    }
+  } else if (!runSimulation && _subscribe) { //if the accelerometer is running
       connectedText = "CONNECTED!";
   } else { //if the accelerometer isnt running
       connectedText = "DISCONNECTED!"; //cue default error codes
   }
 
-  if (connectedText == "CONNECTED!") {
+  //If app is running, override the error text, and show results
+  if (connectedText == "CONNECTED!" || connectedText == "DEMO MODE!" || connectedText == "DEMO RAPID SIMULATION MODE!") {
       currentExerciseRoutine = class_routine_text_source[currentClassification];
       if (currentClassification == (14-1)) {
         countOfExercise = "";
@@ -614,7 +649,7 @@ useEffect(() => {
   const showSummaryAlert = () =>
     Alert.alert(
       "Your Workout Summary!",
-      "Great Job!\n\nYou worked out for "+totalTimeExercising+"!\n\nPulse Situps: "+(totalCountPC+totalCountPI)+"\nCorrect: "+totalCountPC+",  Incorrect: "+totalCountPI+"\n\nV Situps: "+(totalCountVC+totalCountVI)+"\nCorrect: "+totalCountVC+",  Incorrect: "+totalCountVI+"\n\nMost Popular Workout: "+class_routine_text_source[mostDoneSitup]+"\n\n\nWorkout Feedback:\nYour "+positiveFeedback+class_routine_text_source[mostDoneSitup]+ " " +class_summary_recommendary[mostDoneSitup],
+      "Great Job!\n\nYou worked out for "+totalTimeExercising+"!\n\nPulse Situps: "+(totalCountPC+totalCountPI)+"\nCorrect: "+totalCountPC+",  Incorrect: "+totalCountPI+"\n\nV Situps: "+(totalCountVC+totalCountVI)+"\nCorrect: "+totalCountVC+",  Incorrect: "+totalCountVI+"\n\nMost Popular Workout: "+class_routine_text_source[mostDoneSitupType]+"\n\nMost Consistent Workout: "+class_routine_text_source[mostDoneSitup]+"\n\n\nWorkout Feedback:\nYour "+positiveFeedback+class_routine_text_source[mostDoneSitup]+ " " +class_summary_recommendary[mostDoneSitup],
       [
         { text: "Feel the Burn!", onPress: () => console.log("Summary Window Closed") }
       ],
@@ -666,18 +701,18 @@ useEffect(() => {
   return (
     <View style={styles.backgroundContainer}>
       <Text style={styles.subtitletext}>
-        {resetState ? 'S-14 Project - "WestCoast Harvard"' : ''}
+        {resetState ? 'S-14 Project - "West Coast Harvard"' : ''}
       </Text>
       <Text style={styles.titletext}>
-        {resetState ? 'Home Exercise Application' : ''}
+        {resetState ? 'HSweat' : ''}
       </Text>
       <View style={styles.outerContainer}>
         <View style={styles.buttonContainer}>
           <TouchableOpacity onPress={this.toggleEx} style={styles.onoffbutton}>
-            <Text>{isExercising ? '> PAUSE EXERCISE <' : 'Start Exercising!'}</Text>
+            <Text style={styles.onoffbuttonfont}>{isExercising ? '> PAUSE <' : 'Start Exercising!'}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={this.resetEx} style={styles.endbutton}>
-            <Text>{isExercising ? runningTimeDisplay : 'End Exercise'}</Text>
+            <Text style={styles.endbuttonfont}>{isExercising ? runningTimeDisplay : 'End'}</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.innerContainer}>
@@ -714,7 +749,7 @@ useEffect(() => {
           </Text>
       </View>
       <Text style={styles.acctext}>
-          ACC_X: {round(x*adjustment_factor)}     ACC_Y: {round(y*adjustment_factor)}     ACC_Z: {round(z*adjustment_factor)}
+          X: {round(x*adjustment_factor)}     Y: {round(y*adjustment_factor)}     Z: {round(z*adjustment_factor)}
       </Text>
     </View>
     <Text style={styles.minitext}>
@@ -737,7 +772,8 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   outerContainer: {
-    marginTop: 10,
+    marginTop: 0,
+    paddingTop: 0,
     paddingHorizontal: 10,
     backgroundColor: 'white',
     borderRadius: 10,
@@ -752,8 +788,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 5,
     backgroundColor: 'lightblue',
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: 5,
+    marginBottom: 5,
     borderRadius: 20,
   },
   onoffbutton: {
@@ -763,15 +799,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'lightgreen',
     padding: 20,
     margin: 5,
-    borderRadius: 10,
-  },
-  resetbutton: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#eee',
-    padding: 10,
-    margin: 5,
+    marginTop: 0,
     borderRadius: 10,
   },
   endbutton: {
@@ -781,7 +809,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'pink',
     padding: 10,
     margin: 5,
+    marginTop: 0,
     borderRadius: 10,
+  },
+  onoffbuttonfont: {
+    fontSize: 18,
+  },
+  endbuttonfont: {
+    fontSize: 18,
   },
   acctext: {
     marginBottom:2,
@@ -817,20 +852,22 @@ const styles = StyleSheet.create({
     margin: 10,
     marginTop: 0,
     fontSize: 18,
-    color: 'red',
+    color: 'white',
     textAlign: 'center',
+  },
+  titletext: {
+    margin: 10,
+    marginTop: 15,
+    marginBottom: 0,
+    fontSize: 45,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: 'crimson',
   },
   timetext: {
     margin: 2,
     fontSize: 36,
     color: 'white',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  titletext: {
-    margin: 10,
-    marginTop: 0,
-    fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
   },
@@ -850,8 +887,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   logo: {
-    height: 80,
-    width: 60,
+    height: 60,
+    width: 40,
     borderRadius: 10, 
   },
     popupcontainer: {
