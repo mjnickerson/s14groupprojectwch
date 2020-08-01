@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Image, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Image, Alert, ActivityIndicator, Vibration, Platform } from 'react-native';
 import { Accelerometer } from 'expo-sensors';
 import Constants from 'expo-constants';
 
 
+//////// DEMO MODE /////////////////////////////////////////////
+//run a simulation within the app or really connect to server?
+var runSim = false; //flag of "start exercising" running// DISCONNECTS THE APP FROM THE EC2 SERVER CURL PROXY and LOADS SIMULATED RANDOMIZED DATA
+var rapidRandom = false; //rapidly and randomly change classifications to test configuration;
+var timeTillNextRandomClass = 25; //seconds, actual desired time elapsed, till we randomly select new class; Used for diagonstrics;
+////////////////////////////////////////////////////////////////
+
+
+///// PRECISION THRESHOLD /////////////////////////////////////
+//threshold for classification - when are we unsure?
+var predictionCutoff = 0.25;
+
 //TEMPORARY VARIABLES FOR COUNTER - DELETE ME
-var simulatedRawReturnData = "{ anomaly: 0, results: [ { label: 'Class_1', value: 0.01359375 }, { label: 'Class_10', value: 0.1034375 }, { label: 'Class_11', value: 0.1178125 }, { label: 'Class_12', value: 0.1278125 }, { label: 'Class_2', value: 0.02546875 }, { label: 'Class_3', value: 0.0378125 }, { label: 'Class_4', value: 0.0434375 }, { label: 'Class_5', value: 0.0534375 }, { label: 'Class_6', value: 0.0646875 }, { label: 'Class_7', value: 0.0771875 }, { label: 'Class_8', value: 0.0846875 }, { label: 'Class_9', value: 0.0946875 }] }"
+//var simulatedRawReturnData = "{ anomaly: 0, results: [ { label: 'Class_1', value: 0.01359375 }, { label: 'Class_10', value: 0.1034375 }, { label: 'Class_11', value: 0.1178125 }, { label: 'Class_12', value: 0.1278125 }, { label: 'Class_2', value: 0.02546875 }, { label: 'Class_3', value: 0.0378125 }, { label: 'Class_4', value: 0.0434375 }, { label: 'Class_5', value: 0.0534375 }, { label: 'Class_6', value: 0.0646875 }, { label: 'Class_7', value: 0.0771875 }, { label: 'Class_8', value: 0.0846875 }, { label: 'Class_9', value: 0.0946875 }] }"
 //var simulatedReturnClasses = [(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12)];
 var simulatedReturnedSitupCount = 1;
 var randomReturn = [];
@@ -80,79 +92,39 @@ var randomWelcomeText = ['TO FEEL THE BURN!', 'FOR TOTAL AWESOMENESS!', 'TO KICK
 var returnedPredictions = [-.11,(13-1)]; //vector that stores returned predictions from edge_impulse.js
 var situpsCount = [0,0,0,0,0,0,0,0,0,0,0,0]; //[pulse correct, pulse incorrect, v correct, v incorrect]; initial state, none done
 var mostDoneSitup = 9999; //initial state, error code
+var situpStreak = [0,(13-1)]; //[count, class]latest most done situp, used for vibration messaging
+var lastClass = (13-1); //check the last class categorized
+var situpStreakAlertActive = false; //flag to prevent multiple popups
 var totalCountPC = 9999; //count Pulse situp done correctly - initial state, error code
 var totalCountPI = 9999; //count Pulse situp done WRONG - initial state, error code
 var totalCountVC = 9999; //count V situp done correctly - initial state, error code
 var totalCountVI = 9999; //count V situp done WRONG - initial state, error code
 
 
-//CODE BELOW IS FOR NETWORKING, POSTS AND FETCH
-export class FetchData extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.state = { isLoading: true };
-  }
-
-  //emulating  this: curl -d "acc=TestpostText" http://ec2-54-162-148-238.compute-1.amazonaws.com:5000/accelerometer
-
-  //mount external communication
-  componentDidMount() {
-    var returnedDataAnomaly = {};
-    var returnedDataResults = {};
-    return fetch('http://ec2-54-162-148-238.compute-1.amazonaws.com:5000/accelerometer')
-      .then(response => response.json())
-      .then(responseJson => {
-        this.setState(
-          {
-            isLoading: false,
-            returnedDataAnomaly: responseJson.anomaly,
-            returnedDataResults: responseJson.results,
-          },
-          function() {}
-        );
-      })
-      .catch(error => {
-        console.error('WCH componentDidMount Get Error!',error);
-      });
-  }
-  render() {
-    if (this.state.isLoading) {
-      return (
-        <View style={{ flex: 1, padding: 20 }}>
-          <ActivityIndicator />
-        </View>
-      );
-    }
-
-    //console.log(this.state.dataSource);
-
-    //for (var i=0; i < 12; i++) {
-    //  console.log(this.state.dataSource[i]);
-    //  console.log(this.state.dataSource[i].label);
-    //  console.log(this.state.dataSource[i].value);
-    //}
-
-    var completeValues = [];
-    var completeLabels = [];
-    var anomalyValue = this.state.returnedDataAnomaly;
-    completeValues = [this.state.returnedDataResults[0].value, this.state.returnedDataResults[4].value, this.state.returnedDataResults[5].value, this.state.returnedDataResults[6].value, this.state.returnedDataResults[7].value, this.state.returnedDataResults[8].value, this.state.returnedDataResults[9].value, this.state.returnedDataResults[10].value, this.state.returnedDataResults[11].value, this.state.returnedDataResults[1].value, this.state.returnedDataResults[2].value, this.state.returnedDataResults[3].value]
-
-    completeLabels = [this.state.returnedDataResults[0].label, this.state.returnedDataResults[4].label, this.state.returnedDataResults[5].label, this.state.returnedDataResults[6].label, this.state.returnedDataResults[7].label, this.state.returnedDataResults[8].label, this.state.returnedDataResults[9].label, this.state.returnedDataResults[10].label, this.state.returnedDataResults[11].label, this.state.returnedDataResults[1].label, this.state.returnedDataResults[2].label, this.state.returnedDataResults[3].label]
-  }
-}
-
 export default function App() {
 
+  const [runSimulation, setrunSimulation] = useState(runSim); //set state of simulation
   const [isExercising, setIsExercising] = useState(false); //flag of "start exercising" running
   const [accData, setAccData] = useState({}); //latest transmission of current accelerometer data
   const [currentData, setCurrentData] = useState(0); //accelerometer data to SENT to classify
   const [accDataArray, setaccDataArray] = useState([]); //accelerometer data ready to send for classification
   const [currentClassification, setCurrentClassification] = useState([14-1]); //starting state 14, is blank
-  const [maxClassPercent, setmaxClassPercent] = useState(-0.1); //default to negative 100% //may not use this or need this
-  const [guessedClass, setguessedClass] = useState(13); //starting state 13, we dont know //may not use this or need this
   const [elapsedTime, setelapsedTime] = useState(0); //elapsed time counter for each exercise
-  var returnedClassData = []; //vector of returned data from EC2 Instance
+  const [returnedAnomaly, setreturnedAnomaly] = useState(0); //empty state for returned JSON
+  const [returnedClass1, setreturnedClass1] = useState(0); //empty state for returned JSON
+  const [returnedClass2, setreturnedClass2] = useState(0); //empty state for returned JSON
+  const [returnedClass3, setreturnedClass3] = useState(0); //empty state for returned JSON
+  const [returnedClass4, setreturnedClass4] = useState(0); //empty state for returned JSON
+  const [returnedClass5, setreturnedClass5] = useState(0); //empty state for returned JSON
+  const [returnedClass6, setreturnedClass6] = useState(0); //empty state for returned JSON
+  const [returnedClass7, setreturnedClass7] = useState(0); //empty state for returned JSON
+  const [returnedClass8, setreturnedClass8] = useState(0); //empty state for returned JSON
+  const [returnedClass9, setreturnedClass9] = useState(0); //empty state for returned JSON
+  const [returnedClass10, setreturnedClass10] = useState(0); //empty state for returned JSON
+  const [returnedClass11, setreturnedClass11] = useState(0); //empty state for returned JSON
+  const [returnedClass12, setreturnedClass12] = useState(0); //empty state for returned JSON
+  const [returnedClassData, setreturnedClassData] = useState([]); //vector of returned data from EC2 Instance
+  const [simulatedRawReturnData, setsimulatedRawReturnData] = useState([0.01359375,0.02546875,0.0378125,0.0434375,0.0534375,0.0646875,0.0771875,0.0846875,0.0946875,0.1034375,0.1178125,0.1278125]);
   var returnedSitupCount = 9999;
   var totalTimeExercising = 0;
 
@@ -323,21 +295,26 @@ export default function App() {
     if (isExercising) {
         intervalTwoSec = setInterval(() => { //two second interval
         setCurrentData(currentData => accDataArray); //record 2 seconds of data
-        countOfExercise => currentData;
+        currentData => accDataArray //record the data to display
 
         //POST DATA TO AWS
         //////////////////////////////////////////////////////////////////////////////
-        fetch('http://ec2-54-162-148-238.compute-1.amazonaws.com:5000/accelerometer', {
-          method: 'POST', // or 'PUT'
-          body: currentData,
-        })
-        .then(response => response.json())
-        .then(currentData => {
-          console.log('Success:', currentData);
-        })
-        .catch((error) => {
-          console.error('WCH App Post Error!', error);
-        });
+        if (!runSimulation) { //if actually sent to run
+          var accDataSent = new FormData(); //newform
+          var accDataSentFlat = ""; //blank string
+          for (var value = 0; value < accDataArray.length; value++) { //flattening the array into a string
+            accDataSentFlat = accDataSentFlat + accDataArray[value]
+          }
+          accDataSent.append('acc', accDataSentFlat); //adding the string to the formData
+          fetch('http://ec2-54-162-148-238.compute-1.amazonaws.com:5000/accelerometer', {
+            method: 'POST',
+            body: accDataSent, //sending the formData
+          }).then(response => {
+            console.log('Post Connection Success!', response)
+          }).catch(error => {
+            console.error('Post Connection Error!', error);
+          })
+        }
         //////////////////////////////////////////////////////////////////////////////
 
         setaccDataArray(accDataArray => []); //clear the 2 second recording
@@ -348,78 +325,124 @@ export default function App() {
       clearInterval(intervalTwoSec);
     }
     return () => clearInterval(intervalTwoSec);
-  }, [isExercising, currentData]);
+  }, [isExercising, runSimulation, currentData]);
 
 
-//this 'processes classifications from edge impulse model every 4 seconds
+//this processes classifications from edge impulse model every 4 seconds
 useEffect(() => {
     let intervalFourSec = null;
     if (isExercising) {
         intervalFourSec = setInterval(() => { //four second interval
 
-        //GET DATA FROM AWS:
-        ///////////////////////////////////////////////////////////////////////////////
-        fetch('http://ec2-54-162-148-238.compute-1.amazonaws.com:5000/accelerometer')
-          .then(response => response.json())
-          .then(responseJson => {
-            this.setState(
-              {
-                returnedDataAnomaly: responseJson.anomaly,
-                returnedDataResults: responseJson.results,
-              },
-              function() {}
-            );
-          })
-          .catch(error => {
-            console.error('WCH App Get Post Error!', error);
-          });
+        if (!runSimulation) { //if actually sent to run
+            //GET DATA FROM AWS:
+            ///////////////////////////////////////////////////////////////////////////////
 
-        //RECIEVE, JSON IN THIS FORMAT:
-        //{
-        //  anomaly: 0.000444,
-        //  results: [
-        //    { label: 'Class_1', value: 0.015319 },
-        //    { label: 'Class_10', value: 0.006182 },
-        //    { label: 'Class_11', value: 0.000444 },
-        //    { label: 'Class_12', value: 0.000444 }
-        //    { label: 'Class_2', value: 0.000444 },
-        //    { label: 'Class_3', value: 0.006182 },
-        //    { label: 'Class_4', value: 0.978056 },
-        //    { label: 'Class_5', value: 0.015319 }.
-        //    { label: 'Class_6', value: 0.000444 },
-        //    { label: 'Class_7', value: 0.000444 },
-        //    { label: 'Class_8', value: 0.006182 },
-        //    { label: 'Class_9', value: 0.000444 },
-        //  ]
-        //}
+            //RECIEVE, JSON IN THIS FORMAT:
+            //{
+            //  anomaly: 0.000444,
+            //  results: [
+            //    { label: 'Class_1', value: 0.015319 },
+            //    { label: 'Class_10', value: 0.006182 },
+            //    { label: 'Class_11', value: 0.000444 },
+            //    { label: 'Class_12', value: 0.000444 }
+            //    { label: 'Class_2', value: 0.000444 },
+            //    { label: 'Class_3', value: 0.006182 },
+            //    { label: 'Class_4', value: 0.978056 },
+            //    { label: 'Class_5', value: 0.015319 }.
+            //    { label: 'Class_6', value: 0.000444 },
+            //    { label: 'Class_7', value: 0.000444 },
+            //    { label: 'Class_8', value: 0.006182 },
+            //    { label: 'Class_9', value: 0.000444 },
+            //  ]
+            //}
+
+            fetch('http://ec2-54-162-148-238.compute-1.amazonaws.com:5000/accelerometer', {
+              method: 'GET',
+            }).then(response => response.json())
+              .then(responseJson => {
+                  setreturnedAnomaly(returnedAnomaly => responseJson.anomaly),
+                  setreturnedClass1(returnedClass1 => responseJson.results[0].value),
+                  setreturnedClass2(returnedClass2 => responseJson.results[4].value),
+                  setreturnedClass3(returnedClass3 => responseJson.results[5].value),
+                  setreturnedClass4(returnedClass4 => responseJson.results[6].value),
+                  setreturnedClass5(returnedClass5 => responseJson.results[7].value),
+                  setreturnedClass6(returnedClass6 => responseJson.results[8].value),
+                  setreturnedClass7(returnedClass7 => responseJson.results[9].value),
+                  setreturnedClass8(returnedClass8 => responseJson.results[10].value),
+                  setreturnedClass9(returnedClass9 => responseJson.results[11].value),
+                  setreturnedClass10(returnedClass10 => responseJson.results[1].value),
+                  setreturnedClass11(returnedClass11 => responseJson.results[2].value),
+                  setreturnedClass12(returnedClass12 => responseJson.results[3].value),
+                  console.log('GET JSON Connection Success!', responseJson)
+            }).catch(error => {
+              console.error('GET JSON Connection Error!', error);
+            });
+
+            setreturnedClassData(returnedClassData => [returnedClass1,returnedClass2,returnedClass3,returnedClass4,returnedClass5,returnedClass6,returnedClass7,returnedClass8,returnedClass9,returnedClass10,returnedClass11,returnedClass12]);
+
+            console.log("Returned Anomaly:", returnedAnomaly)
+            console.log("Returned Results", returnedClassData);
+
+            //get classification
+            returnedPredictions = selectPredictedClass(returnedClassData); //returnedPredictions is an array of [highest_probabily, guessedClass]
+            //set classification
+            setCurrentClassification(currentClassification => returnedPredictions[1]);
+            //validate classification
+            if (returnedPredictions[0] < predictionCutoff) { //if we arent at least 20% confident
+              returnUnclearPrediction(); //set to class 13
+            }
+        }
         ///////////////////////////////////////////////////////////////////////////////
 
         //simulate return;
-        returnedClassData = simulatedRawReturnData;
-        returnedSitupCount = simulatedReturnedSitupCount;
 
-
-        //clean text recieved into an array we can use  (extractProbabilities returns [probArray, probString], where probString is formatted)
-        var returnedClassArray = extractProbabilities(returnedClassData)[0]; //take only the first part of array, an inner array of class prediction probs
-        //get classification
-        returnedPredictions = selectPredictedClass(returnedClassArray); //returnedPredictions is an array of [highest_probabily, guessedClass]
-        //set classification
-        setCurrentClassification(currentClassification => returnedPredictions[1]);
-        //validate classification
-        if (returnedPredictions[0] < 0.20) { //if we arent at least 20% confident
-          returnUnclearPrediction(); //set to class 13
+        if (runSimulation) { //if set to return
+           setreturnedClassData(returnedClassData => simulatedRawReturnData);
+           if (rapidRandom) {
+             returnedPredictions = selectPredictedClass([getRandomVector()[0],getRandomVector()[1],getRandomVector()[2],getRandomVector()[3],getRandomVector()[4],getRandomVector()[5],getRandomVector()[6],getRandomVector()[7],getRandomVector()[8],getRandomVector()[9],getRandomVector()[10],getRandomVector()[11]]);
+           } else {
+             returnedPredictions = selectPredictedClass(returnedClassData); //returnedPredictions is an array of [highest_probabily, guessedClass]
+           }
+            //set classification
+            setCurrentClassification(currentClassification => returnedPredictions[1]);
+            //validate classification
+            if (returnedPredictions[0] < predictionCutoff) { //if we arent at least 20% confident
+               returnUnclearPrediction(); //set to class 13
+            }
         }
 
+        returnedSitupCount = simulatedReturnedSitupCount;
+        ///////////////////////////////////////////////////////////////////////////////
+
+        //FOLLOWING FUNCTION IS NOT NEEDED, AS WE EXTRACTED AND ORGANIZED VIA JSON ABOVE - DEPRICATED
+        //clean text recieved into an array we can use  (extractProbabilities returns [probArray, probString], where probString is formatted)
+        //var returnedClassArray = extractProbabilities(returnedClassData)[0]; //take only the first part of array, an inner array of class prediction probs
+
+        //count situps
         if (currentClassification == (13-1)) { //if were unsure
-          situpsCount[0] = situpsCount[0] + 0; //dont add anything (same as 'pass', or 'null')
-        } else {
+            situpsCount[0] = situpsCount[0] + 0; //dont add anything (same as 'pass', or 'null')
+        } else if (situpStreakAlertActive == false) {
           situpsCount[currentClassification] = situpsCount[currentClassification] + returnedSitupCount; //add to the total situp count
         }
 
-        //HERE INSERT CODE THAT CHECKS FOR A RECENT STREAK OF INCORRECT EXERCISES
-        //ACTIVATES HAPTIC VIBRATION PATTERN TO ALERT USER IT NEEDS ATTENTION!
-        //VIBRATION FUNCTION IS CHECKED TO BE ACTIVATED EVERY 4 SECONDS
-        //NEEDS A POP UP WINDOW THAT CAN BE CLOSED TO TURN THE VIBRATION OFF
+         ///////////////////////////////////////////////////////////////////////////////
+        //CODE THAT CHECKS FOR A RECENT STREAK OF INCORRECT EXERCISE
+        if (currentClassification != (1-1) && currentClassification != (4-1) && currentClassification != (7-1) && currentClassification != (10-1)) {
+          if (situpStreakAlertActive == false) {
+            if (lastClass == currentClassification) {
+                situpStreak[0] = situpStreak[0] + 1;
+                situpStreak[1] = currentClassification;
+            }
+          }
+        } else {
+          situpStreak[0] = 0;
+        }
+
+        if (currentClassification != (13-1)) { //if werenot unsure
+          lastClass = currentClassification; //reset last class
+        }
+         ///////////////////////////////////////////////////////////////////////////////
 
       }, reportTimeDelta);
     }
@@ -430,7 +453,26 @@ useEffect(() => {
       displayImprovementFeedback => ""
     }
     return () => clearInterval(intervalFourSec);
-  }, [isExercising, currentClassification]);
+  }, [isExercising, runSimulation, returnedClassData, currentClassification]);
+
+
+    //this is for simulation only, a 16 second loop to randomly changes the simulatedClass vector
+  useEffect(() => {
+    let intervalTillNextRandomClass = null;
+    if (isExercising) {
+      if (runSimulation) {
+        intervalTillNextRandomClass = setInterval(() => { //sixteen second interval
+          setsimulatedRawReturnData([getRandomVector()[0],getRandomVector()[1],getRandomVector()[2],getRandomVector()[3],getRandomVector()[4],getRandomVector()[5],getRandomVector()[6],getRandomVector()[7],getRandomVector()[8],getRandomVector()[9],getRandomVector()[10],getRandomVector()[11]]); //create a random "fake" server return, for simulation)
+        }, ((timeTillNextRandomClass-4-4)*1000));
+      }
+    }
+    else if (!isExercising && currentData !== 0)
+    {
+      clearInterval(intervalTillNextRandomClass);
+    }
+    return () => clearInterval(intervalTillNextRandomClass);
+  }, [isExercising, runSimulation, simulatedRawReturnData]);
+
 
   //STATE CONSTANTS
   const _Toggle = () => {
@@ -472,7 +514,7 @@ useEffect(() => {
       totalCountVI = situpsCount[8-1] + situpsCount[9-1] + situpsCount[11-1] + situpsCount[12-1]; //V incorrect
 
       //see if positiveFeedback is needed (did they do some right but MORE wrong?)
-      if (mostDoneSitup !=0 && mostDoneSitup!= 3 && mostDoneSitup!= 6 && mostDoneSitup!= 9) { //if most popular was done incorrectly
+      if (mostDoneSitup !=0 && mostDoneSitup!=3 && mostDoneSitup!=6 && mostDoneSitup!=9) { //if most popular was done incorrectly
         if ((totalCountPC + totalCountVC) > 0) { //if they did any correct situps, positive feedback should be given
           if (totalCountPC > totalCountVC) {
             positiveFeedback = "Pulse Situps are done really well, keep it up!\n\nSome " //positive feedback for pulse, before negative
@@ -487,31 +529,43 @@ useEffect(() => {
       //compile time summary
       if (elapsedTime < 60) {
           totalTimeExercising = elapsedTime + " Seconds"
-      } else {
+      } else if (elapsedTime < 120) {
           var sec = elapsedTime % 60;
           var min = ((elapsedTime - sec) / 60);
+          totalTimeExercising = min + " Minute, " + sec + " Seconds";
+      } else {
+          sec = elapsedTime % 60;
+          min = ((elapsedTime - sec) / 60);
           totalTimeExercising = min + " Minutes, " + sec + " Seconds";
       }
 
       //display summary stats
       if (elapsedTime != 0) { //if the user has exercised for any length of time
-        createSummaryAlert(); //create a popup box with summary info
+        showSummaryAlert(); //create a popup box with summary info
       }
 
       //reset counter states
       setCurrentData(0);
       setelapsedTime(0);
       setCurrentClassification(14-1);
-      setmaxClassPercent(-0.1);
-      setguessedClass(14-1);
       situpsCount = [0,0,0,0,0,0,0,0,0,0,0,0]; //zero out situps counter
       positiveFeedback = "";
+      situpStreak[0] = 0;
+      situpStreak[1] = (13-1);
       welcomeTextIteration = randomWelcomeText[selectPredictedClass([getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability(),getRandomProbability()])[1]];
 
-      //simulatedReturnClasses = getRandomVector(); //temporary to randomize function data
-      randomReturn = getRandomVector(); //temporary to randomize function data
-      simulatedRawReturnData = "{ anomaly: 0, results: [ { label: 'Class_1', value: " + randomReturn[0] + " }, { label: 'Class_10', value: " + randomReturn[9] + " }, { label: 'Class_11', value: " + randomReturn[10] + " }, { label: 'Class_12', value: " + randomReturn[11] + " }, { label: 'Class_2', value: " + randomReturn[1] + " }, { label: 'Class_3', value: " + randomReturn[2] + " }, { label: 'Class_4', value: " + randomReturn[3] + " }, { label: 'Class_5', value: " + randomReturn[4] + " }, { label: 'Class_6', value: " + randomReturn[5] + " }, { label: 'Class_7', value: " + randomReturn[6] + " }, { label: 'Class_8', value: " + randomReturn[7] + " }, { label: 'Class_9', value: " + randomReturn[8] + " }] }" //temporarily create random return string from AWS Node
+      if (!runSimulation) { //if app actually connecting to server
+        setreturnedClassData([]);
+      }
+
+      //BELOW IS TO RANDOMIZE DATA FOR TESTING - DISCONNECTED FOR FUNCTIONING APP - DELETE ME
+      //simulatedRawReturnData = "{ anomaly: 0, results: [ { label: 'Class_1', value: " + randomReturn[0] + " }, { label: 'Class_10', value: " + randomReturn[9] + " }, { label: 'Class_11', value: " + randomReturn[10] + " }, { label: 'Class_12', value: " + randomReturn[11] + " }, { label: 'Class_2', value: " + randomReturn[1] + " }, { label: 'Class_3', value: " + randomReturn[2] + " }, { label: 'Class_4', value: " + randomReturn[3] + " }, { label: 'Class_5', value: " + randomReturn[4] + " }, { label: 'Class_6', value: " + randomReturn[5] + " }, { label: 'Class_7', value: " + randomReturn[6] + " }, { label: 'Class_8', value: " + randomReturn[7] + " }, { label: 'Class_9', value: " + randomReturn[8] + " }] }" //temporarily create random return string from AWS Node
+      if (runSimulation) { //if app is simulating locally
+        setsimulatedRawReturnData([getRandomVector()[0],getRandomVector()[1],getRandomVector()[2],getRandomVector()[3],getRandomVector()[4],getRandomVector()[5],getRandomVector()[6],getRandomVector()[7],getRandomVector()[8],getRandomVector()[9],getRandomVector()[10],getRandomVector()[11]]); //temporarily create random return string from AWS Node
+        setreturnedClassData(returnedClassData);
+      }
   }
+
 
   //function of accelerometer
   const _subscribe = () => {
@@ -550,16 +604,14 @@ useEffect(() => {
       displayImprovementFeedback = class_improvement_text_source[currentClassification];
       sensorPosition = class_Sensor_Position_source[currentClassification];
       accDataDump = currentData; //test this function.
-      returnClassDataDump = extractProbabilities(simulatedRawReturnData)[1]; //test this function.
   }
-
 
   //compile time counter displays
   runningTimeDisplay = printElapsedTimeString(elapsedTime)
 
-  //POPUP ALERT DISPLAYS
 
-  const createSummaryAlert = () =>
+  //POPUP ALERT DISPLAYS
+  const showSummaryAlert = () =>
     Alert.alert(
       "Your Workout Summary!",
       "Great Job!\n\nYou worked out for "+totalTimeExercising+"!\n\nPulse Situps: "+(totalCountPC+totalCountPI)+"\nCorrect: "+totalCountPC+",  Incorrect: "+totalCountPI+"\n\nV Situps: "+(totalCountVC+totalCountVI)+"\nCorrect: "+totalCountVC+",  Incorrect: "+totalCountVI+"\n\nMost Popular Workout: "+class_routine_text_source[mostDoneSitup]+"\n\n\nWorkout Feedback:\nYour "+positiveFeedback+class_routine_text_source[mostDoneSitup]+ " " +class_summary_recommendary[mostDoneSitup],
@@ -569,15 +621,52 @@ useEffect(() => {
       { cancelable: false }
     );
 
-  //APP PRIMARY DISPLAY
+  const showWrongExerciseAlert = () =>
+    Alert.alert(
+      "Here's how you can improve!",
+      "You have been doing your "+class_routine_text_source[situpStreak[1]]+" incorrectly.\n\nThey "+class_summary_recommendary[situpStreak[1]],
+      [
+        { text: "Thanks for the feedback!", onPress: () => (Vibration.cancel(), situpStreakAlertActive =  false) }
+      ],
+      { cancelable: false }
+    );
+
+  function createWrongExerciseAlert() {
+      situpStreakAlertActive = true; //set flag to prevent more popups
+      situpStreak[0] = 0; //reset streak count
+      //start a vibration pattern
+      Vibration.vibrate(ALERTPATTERN, true);
+      //show an alert
+      showWrongExerciseAlert(); //will turn off vibration and set flag to allow popups, with pressing ok.
+  }
+
+  //haptic feedback and vibration patterns
+  const ONE_SECOND_IN_MS = 1000;
+  const ALERTPATTERN = [
+    0.10 * ONE_SECOND_IN_MS,
+    0.25 * ONE_SECOND_IN_MS,
+  ];
+  const PATTERN_DESC =
+    Platform.OS === "android"
+      ? "wait 0.1s, vibrate 0.25s"
+      : "wait 0.1s, vibrate";
+
+    //display summary stats
+  if (situpStreak[0] > 5) { //if the user has repeatedly done the same exercise wrong (correct classes 1, 4, 7, 10 arent added to this count)
+    if (situpStreakAlertActive == false) {
+      //start a vibration pattern and a summary pop up box
+      createWrongExerciseAlert();
+    }
+  }
 
   //DISPLAY CODE GRAVEYARD- DELETE ME PRIOR TO MASTER
   //<Image source={{uri: 'https://static.thenounproject.com/png/637461-200.png'}} style={{ height:100, width:100}}/> //how to load remote images
 
+  ///////////APP PRIMARY DISPLAY///////////////
   return (
     <View style={styles.backgroundContainer}>
       <Text style={styles.subtitletext}>
-        {resetState ? 'S-14 Project - "West Coast Harvard"' : ''}
+        {resetState ? 'S-14 Project - "WestCoast Harvard"' : ''}
       </Text>
       <Text style={styles.titletext}>
         {resetState ? 'Home Exercise Application' : ''}
@@ -629,10 +718,10 @@ useEffect(() => {
       </Text>
     </View>
     <Text style={styles.minitext}>
-        Accelerometer Data - Output: {accDataDump}
+        Accelerometer Data - Input: {accDataDump}
     </Text>
-        <Text style={styles.minitext}>
-        Returned Classifications - Input: {returnClassDataDump}
+    <Text style={styles.minitext}>
+        Returned Classifications - Output: {round(returnedClassData[1-1])}  {round(returnedClassData[2-1])}  {round(returnedClassData[3-1])}  {round(returnedClassData[4-1])}  {round(returnedClassData[5-1])}  {round(returnedClassData[6-1])}  {round(returnedClassData[7-1])}  {round(returnedClassData[8-1])}  {round(returnedClassData[9-1])}  {round(returnedClassData[10-1])}  {round(returnedClassData[11-1])}  {round(returnedClassData[12-1])}
     </Text>
   </View>
   );
