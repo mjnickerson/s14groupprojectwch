@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Image, Alert, ActivityIndicator, Vibration, Platform } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Image, Alert, ActivityIndicator, Vibration, Platform} from 'react-native';
 import { Accelerometer } from 'expo-sensors';
 import Constants from 'expo-constants';
 
@@ -7,10 +7,10 @@ import Constants from 'expo-constants';
 
 //////// DEMO MODE /////////////////////////////////////////////
 //run a simulation within the app or really connect to server?
-var runSim = false; //flag of "start exercising" running // DISCONNECTS THE APP FROM THE EC2 SERVER CURL PROXY and LOADS SIMULATED RANDOMIZED DATA
+var runSim = true; //flag of "start exercising" running // DISCONNECTS THE APP FROM THE EC2 SERVER CURL PROXY and LOADS SIMULATED RANDOMIZED DATA
 var rapidSim = false; //speed up the overall simulation (relies on simulatedRawReturnData);
-var rapidRandom = false; //randomly change classifications directly into engine, regardless of simulatedRawReturnData, to test configuration;
-var simWarning = true; //show a warning to the user its running in simulation mode?
+var rapidRandom = true; //randomly change classifications directly into engine, regardless of simulatedRawReturnData, to test configuration;
+var simWarning = false; //show a warning to the user its running in simulation mode?
 var timeTillNextRandomClass = (17); //seconds, actual desired time elapsed, till we randomly select new class; Used for diagonstrics;
 var simulatedReturnedSitupCount = 1; //how many situps to add per response period.
 var randomReturn = [];
@@ -68,36 +68,36 @@ var positiveFeedback = ""; //default is blank, no positive feedback.
 //13, we cant determine
 //14, show blank (default)
 var class_routine_text_source = ["Pulse Sit ups","Pulse Sit ups","Pulse Sit ups","Pulse Sit ups","Pulse Sit ups","Pulse Sit ups","V Sit ups",
-"V Sit ups","V Sit ups","V Sit ups","V Sit ups","V Sit ups","Ummm.....","",];
-var class_improvement_text_source = ["Great job!\nYou are doing the Pulse sit up correctly. Keep up the good workout! (1)",
-"Needs Improvement!\nTry to adjust your head to align in the center when you are in a sitting position. (2)",
-"Needs Improvement!\nTry to adjust your head to align in the center when you are in a sitting position. (3)",
-"Great job!\nYou are doing the Pulse sit up correctly. Keep up the good workout! (4)",
-"Needs Improvement!\nYour arms are way too high. Stretch your arms straight when you lift up your torso. (5)",
-"Needs Improvement!\nYour arms are way too low. Try to stretch your arms straight when you lift up your torso. (6)",
-"Great job!\nYou are doing the V sit up correctly. Keep up the good workout! (7)",
-"Needs Improvement!\nTry to adjust your form to align in the center when you lift up your torso. (8)",
-"Needs Improvement!\nTry to adjust your form to align in the center when you lift up your torso. (9)",
-"Great job!\nYou are doing the V sit up correctly. Keep up the good workout! (10)",
-"Needs Improvement!\nTry to adjust your arms to align in the center when you lift up your torso. (11)",
-"Needs Improvement!\nTry to adjust your arms to align in the center when you lift up your torso. (12)",
-"Sorry!\nWe're unsure what kind of exercise you're doing -\n Please Try again! (13)",
+"V Sit ups","V Sit ups","V Sit ups","V Sit ups","V Sit ups","Ummm.....","Calculating...",];
+var class_improvement_text_source = ["Great job!\nYou are doing the Pulse sit up correctly. Keep up the good workout!",
+"Pulse situp needs improvement!\nTry to adjust your head to align in the center when you are in a sitting position.",
+"Pulse situp needs improvement!\nTry to adjust your head to align in the center when you are in a sitting position.",
+"Great job!\nYou are doing the Pulse sit up correctly. Keep up the good workout!",
+"Pulse situp needs improvement!\nYour arms are way too high. Stretch your arms straight when you lift up your torso.",
+"Pulse situp needs improvement!\nYour arms are way too low. Try to stretch your arms straight when you lift up your torso.",
+"Great job!\nYou are doing the V sit up correctly. Keep up the good workout!",
+"V-situp needs improvement!\nTry to adjust your form to align in the center when you lift up your torso.",
+"V-situp needs improvement!\nTry to adjust your form to align in the center when you lift up your torso.",
+"Great job!\nYou are doing the V sit up correctly. Keep up the good workout!",
+"V-situp needs improvement!\nTry to adjust your arms to align in the center when you lift up your torso.",
+"V-situp needs improvement!\nTry to adjust your arms to align in the center when you lift up your torso.",
+"Sorry!\nWe're unsure what exercise you're doing -\nPlease Try again!",
 ""];
 //below can be modified from strings above to simplify if time allows --> would be easy to just modify the start of the string!
-var class_summary_recommendary = ["are done super well!\nYou are doing the Pulse sit up correctly. Keep up the good workout! (1)",
-"need improvement!\nTry to adjust your head to align in the center when you are in a sitting position. (2)",
-"need improvement!\nTry to adjust your head to align in the center when you are in a sitting position. (3)",
-"are done very well!\nYou are doing the Pulse sit up correctly. Keep up the good workout! (4)",
-"need improvement!\nYour arms are way too high. Stretch your arms straight when you lift up your torso. (5)",
-"need improvement!\nYour arms are way too low. Try to stretch your arms straight when you lift up your torso. (6)",
-"are done very well!\nYou are doing the V sit up correctly. Keep up the good workout! (7)",
-"need improvement!\nTry to adjust your form to align in the center when you lift up your torso. (8)",
-"need improvement!\nTry to adjust your form to align in the center when you lift up your torso. (9)",
-"are done super well!\nYou are doing the V sit up correctly. Keep up the good workout! (10)",
-"need improvement!\nTry to adjust your arms to align in the center when you lift up your torso. (11)",
-"need improvement!\nTry to adjust your arms to align in the center when you lift up your torso. (12)",
-".....hmmmm..... You haven't done any exercise, or we're not sure what exercise you did! Please Try Again! (13)"]
-var class_Sensor_Position_source = ["Head","Head","Head","Head","Head","Head","Arm","Arm","Arm","Arm","Arm","Arm","Not Sure...",""]
+var class_summary_recommendary = ["are done super well!\nYou are doing the Pulse sit up correctly. Keep up the good workout!",
+"need improvement!\nTry to adjust your head to align in the center when you are in a sitting position.",
+"need improvement!\nTry to adjust your head to align in the center when you are in a sitting position.",
+"are done very well!\nYou are doing the Pulse sit up correctly. Keep up the good workout!",
+"need improvement!\nYour arms are way too high. Stretch your arms straight when you lift up your torso.",
+"need improvement!\nYour arms are way too low. Try to stretch your arms straight when you lift up your torso.",
+"are done very well!\nYou are doing the V sit up correctly. Keep up the good workout!",
+"need improvement!\nTry to adjust your form to align in the center when you lift up your torso.",
+"need improvement!\nTry to adjust your form to align in the center when you lift up your torso.",
+"are done super well!\nYou are doing the V sit up correctly. Keep up the good workout!",
+"need improvement!\nTry to adjust your arms to align in the center when you lift up your torso.",
+"need improvement!\nTry to adjust your arms to align in the center when you lift up your torso.",
+".....hmmmm..... You haven't done any exercise, or we're not sure what exercise you did! Please Try Again!"]
+var class_Sensor_Position_source = ["on head","on head","on head","on head","on head","on head","on arm","on arm","on arm","on arm","on arm","on arm","",""]
 var class_Sensor_Image_Source = ['assets/headband_icon.png','assets/headband_icon.png','assets/headband_icon.png','assets/armband_icon.png','assets/armband_icon.png','assets/armband_icon.png','assets/headband_icon.png','assets/headband_icon.png','assets/headband_icon.png','assets/armband_icon.png','assets/armband_icon.png','assets/armband_icon.png','assets/were_not_sure.png','assets/exercise_icon.png']
 var randomWelcomeText = ['TO FEEL THE BURN!', 'FOR TOTAL AWESOMENESS!', 'TO KICK IT!', 'FOR MAXIMUM EXERCISE!', 'FOR TOTAL VICTORY!', 'FOR EYE OF THE TIGER!']; //inspirational sayings when on home screen
 
@@ -108,6 +108,11 @@ var mostDoneSitupType = 9999;
 var situpStreak = [0,(13-1)]; //[count, class]latest most done situp, used for vibration messaging
 var lastClass = (13-1); //check the last class categorized
 var situpStreakAlertActive = false; //flag to prevent multiple popups
+var elapsedTimePerClass = [0,0,0,0,0,0,0,0,0,0,0,0]; //running tally of seconds for each situp class.
+var timeStampOfLastSitupAddition = 0;
+var pulseSitupTotalTime = 0;
+var vSitupTotalTime = 0;
+var avgSecPerSitup = 0.0;
 var totalCountPC = 9999; //count Pulse situp done correctly - initial state, error code
 var totalCountPI = 9999; //count Pulse situp done WRONG - initial state, error code
 var totalCountVC = 9999; //count V situp done correctly - initial state, error code
@@ -246,7 +251,7 @@ export default function App() {
     return max_Value_Index;
   }
 
-  function printElapsedTimeString(inputSeconds) {
+  function printDigitalTimeDisplay(inputSeconds) {
     //intakes a count of elapsed seconds, and outputs a formatted elapsed time string
     //MM:SS:CC --> 05:22:12 --> 5 min 22.12 seconds
     var runningSubSec = inputSeconds % 1;
@@ -262,13 +267,25 @@ export default function App() {
     if (runningSubSec < 10) {
       runningSubSec = "00";
     }
-    var runningTimeDisplay = runningMin + ":" + runningSec + ":" + runningSubSec;
-    return runningTimeDisplay;
+    var digitalDisplay = runningMin + ":" + runningSec + ":" + runningSubSec;
+    return digitalDisplay;
   }
 
-  //TRY OUT FETCHDATA CLASS HERE - HOW DOES IT DEPLOY AND HOW CAN WE GET ACCESS TO THE VARIABLES WHEN WE CREATE AN INSTANCE OF IT
-
-  //console.log(FetchData.render);
+  function createVerbalTimeReadout(inputSeconds) {
+    var timeString = "";
+    if (inputSeconds < 60) {
+        timeString = inputSeconds + " Seconds"
+    } else if (inputSeconds < 120) {
+        var sec = inputSeconds % 60;
+        var min = ((inputSeconds - sec) / 60);
+        timeString = min + " Minute, " + sec + " Seconds";
+    } else {
+        sec = inputSeconds % 60;
+        min = ((inputSeconds - sec) / 60);
+        timeString = min + " Minutes, " + sec + " Seconds";
+    }
+  return timeString;
+  }
 
   //state based useEffects
 
@@ -437,6 +454,8 @@ useEffect(() => {
             situpsCount[0] = situpsCount[0] + 0; //dont add anything (same as 'pass', or 'null')
         } else if (situpStreakAlertActive == false) {
           situpsCount[currentClassification] = situpsCount[currentClassification] + returnedSitupCount; //add to the total situp count
+          elapsedTimePerClass[currentClassification] = elapsedTimePerClass[currentClassification] + (elapsedTime - timeStampOfLastSitupAddition);
+          timeStampOfLastSitupAddition = elapsedTime;
         }
 
          ///////////////////////////////////////////////////////////////////////////////
@@ -550,29 +569,21 @@ useEffect(() => {
         }
       }
 
+      avgSecPerSitup = round( (elapsedTimePerClass[0] + elapsedTimePerClass[1] + elapsedTimePerClass[2] + elapsedTimePerClass[3] + elapsedTimePerClass[4] + elapsedTimePerClass[5] + elapsedTimePerClass[6] + elapsedTimePerClass[7] + elapsedTimePerClass[8] + elapsedTimePerClass[9] + elapsedTimePerClass[10] + elapsedTimePerClass[11]) / (totalCountPC+totalCountPI+totalCountVC+totalCountVI) );
 
-
-      //compile time summary
-      if (elapsedTime < 60) {
-          totalTimeExercising = elapsedTime + " Seconds"
-      } else if (elapsedTime < 120) {
-          var sec = elapsedTime % 60;
-          var min = ((elapsedTime - sec) / 60);
-          totalTimeExercising = min + " Minute, " + sec + " Seconds";
-      } else {
-          sec = elapsedTime % 60;
-          min = ((elapsedTime - sec) / 60);
-          totalTimeExercising = min + " Minutes, " + sec + " Seconds";
-      }
+      //total elapsed time
+      totalTimeExercising = createVerbalTimeReadout(elapsedTime)
+      //totalTimeExercising = printElapsedTimeString(elapsedTime)
 
       //display summary stats
-      if (elapsedTime != 0) { //if the user has exercised for any length of time
+      if (elapsedTime > 10 || sumOfAllEx != 0) { //if the user has exercised for any length of time or done any situps at all
         showSummaryAlert(); //create a popup box with summary info
       }
 
       //reset counter states
       setCurrentData(0);
-      setelapsedTime(0);
+      setelapsedTime(0); //zero out elapsed time
+      elapsedTimePerClass = [0,0,0,0,0,0,0,0,0,0,0,0]; //zero out elapsed time
       setCurrentClassification(14-1);
       situpsCount = [0,0,0,0,0,0,0,0,0,0,0,0]; //zero out situps counter
       positiveFeedback = "";
@@ -620,38 +631,42 @@ useEffect(() => {
     } else if (simWarning && !rapidRandom || simWarning && !rapidSim) {
       connectedText = "DEMO MODE!";
     } else if (!simWarning) {
-      connectedText = "CONNECTED!";
+      connectedText = "Connected";
     }
   } else if (!runSimulation && _subscribe) { //if the accelerometer is running
-      connectedText = "CONNECTED!";
+      connectedText = "Connected";
   } else { //if the accelerometer isnt running
-      connectedText = "DISCONNECTED!"; //cue default error codes
+      connectedText = "NOT CONNECTED!"; //cue default error codes
   }
 
   //If app is running, override the error text, and show results
-  if (connectedText == "CONNECTED!" || connectedText == "DEMO MODE!" || connectedText == "DEMO RAPID SIMULATION MODE!") {
+  if (connectedText == "Connected" || connectedText == "DEMO MODE!" || connectedText == "DEMO RAPID SIMULATION MODE!") {
       currentExerciseRoutine = class_routine_text_source[currentClassification];
       if (currentClassification == (14-1)) {
         countOfExercise = "";
       } else {
-        countOfExercise = "Pulse Situps: " + (situpsCount[0]+situpsCount[1]+situpsCount[2]+situpsCount[3]+situpsCount[4]+situpsCount[5]) + ";  V Situps: " + (situpsCount[6]+situpsCount[7]+situpsCount[8]+situpsCount[9]+situpsCount[10]+situpsCount[11]) +";";
+        countOfExercise = "Pulse Situps | " + (situpsCount[0]+situpsCount[1]+situpsCount[2]+situpsCount[3]+situpsCount[4]+situpsCount[5]) + " count, " + pulseSitupTotalTime + " total\n\nV Situps | " + (situpsCount[6]+situpsCount[7]+situpsCount[8]+situpsCount[9]+situpsCount[10]+situpsCount[11])+" count, "+ vSitupTotalTime + " total";
       }
       displayImprovementFeedback = class_improvement_text_source[currentClassification];
       sensorPosition = class_Sensor_Position_source[currentClassification];
       accDataDump = currentData; //test this function.
   }
 
-  //compile time counter displays
-  runningTimeDisplay = printElapsedTimeString(elapsedTime)
 
+  //compile time counter displays
+  runningTimeDisplay = printDigitalTimeDisplay(elapsedTime); //text string of digital elapsed time exercising
+
+  //average length of time per situpelapsedTimePerClass
+  pulseSitupTotalTime = createVerbalTimeReadout(elapsedTimePerClass[0] + elapsedTimePerClass[1] + elapsedTimePerClass[2] + elapsedTimePerClass[3] + elapsedTimePerClass[4] + elapsedTimePerClass[5]); //time doing pulses
+  vSitupTotalTime =  createVerbalTimeReadout(elapsedTimePerClass[6] + elapsedTimePerClass[7] + elapsedTimePerClass[8] + elapsedTimePerClass[9] + elapsedTimePerClass[10] + elapsedTimePerClass[11]); //time doing v
 
   //POPUP ALERT DISPLAYS
   const showSummaryAlert = () =>
     Alert.alert(
       "Your Workout Summary!",
-      "Great Job!\n\nYou worked out for "+totalTimeExercising+"!\n\nPulse Situps: "+(totalCountPC+totalCountPI)+"\nCorrect: "+totalCountPC+",  Incorrect: "+totalCountPI+"\n\nV Situps: "+(totalCountVC+totalCountVI)+"\nCorrect: "+totalCountVC+",  Incorrect: "+totalCountVI+"\n\nMost Popular Workout: "+class_routine_text_source[mostDoneSitupType]+"\n\nMost Consistent Workout: "+class_routine_text_source[mostDoneSitup]+"\n\n\nWorkout Feedback:\nYour "+positiveFeedback+class_routine_text_source[mostDoneSitup]+ " " +class_summary_recommendary[mostDoneSitup],
+      "Great Job!\n\nYou worked out for "+totalTimeExercising+"!\n\nYou do a situp in "+ avgSecPerSitup +" seconds on average\n\nPulse Situps | "+(totalCountPC+totalCountPI)+" Total in "+pulseSitupTotalTime+"\nCorrect: "+totalCountPC+",  Incorrect: "+totalCountPI+"\n\nV Situps |  "+(totalCountVC+totalCountVI)+" Total in "+vSitupTotalTime+"\nCorrect: "+totalCountVC+",  Incorrect: "+totalCountVI+"\n\nMost Popular Workout: "+class_routine_text_source[mostDoneSitupType]+"\n\nMost Consistent Workout: "+class_routine_text_source[mostDoneSitup]+"\n\n\nWorkout Feedback:\nYour "+positiveFeedback+class_routine_text_source[mostDoneSitup]+ " " +class_summary_recommendary[mostDoneSitup],
       [
-        { text: "Feel the Burn!", onPress: () => console.log("Summary Window Closed") }
+        { text: "Done", onPress: () => console.log("Summary Window Closed") }
       ],
       { cancelable: false }
     );
@@ -696,68 +711,60 @@ useEffect(() => {
 
   //DISPLAY CODE GRAVEYARD- DELETE ME PRIOR TO MASTER
   //<Image source={{uri: 'https://static.thenounproject.com/png/637461-200.png'}} style={{ height:100, width:100}}/> //how to load remote images
+  //<Image style={styles.logo} source={require('assets/headband_icon.png')}/>
 
   ///////////APP PRIMARY DISPLAY///////////////
   return (
     <View style={styles.backgroundContainer}>
-      <Text style={styles.subtitletext}>
-        {resetState ? 'S-14 Project - "West Coast Harvard"' : ''}
-      </Text>
-      <Text style={styles.titletext}>
-        {resetState ? 'HSweat' : ''}
-      </Text>
       <View style={styles.outerContainer}>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity onPress={this.toggleEx} style={styles.onoffbutton}>
-            <Text style={styles.onoffbuttonfont}>{isExercising ? '> PAUSE <' : 'Start Exercising!'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={this.resetEx} style={styles.endbutton}>
-            <Text style={styles.endbuttonfont}>{isExercising ? runningTimeDisplay : 'End'}</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.innerContainer}>
-          <Text style={styles.paragraph}>
-            {resetState ? '' : 'Current Exercise Routine'}
-          </Text>
-          <Text style={styles.distext}>
-            {currentExerciseRoutine}
-          </Text>
-          <Text style={styles.paragraph}>
-            {resetState ? 'GET READY' : 'Exercise Rep Count'}
-          </Text>
-          <Text style={styles.distext}>
-            {countOfExercise}
-          </Text>
-          <Text style={styles.paragraph}>
-            {resetState ? welcomeTextIteration : 'Recommended Improvement'}
-          </Text>
-          <Text style={styles.distext}>
-            {displayImprovementFeedback}
-          </Text>
-          <Text>
-            {resetState ? '' : 'Sensor Position'}
-          </Text>
-          <Text style={styles.positiontext}>
-            {sensorPosition}
-          </Text>
-          <Image style={styles.logo} source={require('assets/headband_icon.png')}/>
-          <Text>
+        <Text style={styles.subtitletext}>
+          {resetState ? 'S-14 Project - "West Coast Harvard"' : ''}
+        </Text>
+        <Text style={styles.superTitleText}>
+          {resetState ? '' : 'HSweat'}
+        </Text>
+        <Text style={resetState ? styles.titletextred : styles.titletext}>
+          {resetState ? 'HSweat' : runningTimeDisplay}
+        </Text>
+        <View style={styles.connectedStatusContainer}>
+          <Text style={styles.deviceStatusText}>
             Device Status
           </Text>
           <Text style={styles.connecttext}>
-            {connectedText}
+            {connectedText} {sensorPosition}
+          </Text>
+        </View>
+        <View style={styles.innerContainer}>
+          <Text style={styles.primaryBoldText}>
+            {resetState ? '' : 'Current Workout'}
+          </Text>
+          <View style={styles.buttonContainer}>
+          <TouchableOpacity onPress={null} style={resetState ? styles.dummyblankwhitebutton : styles.dummybuttonfortexthilight}>
+            <Text style={styles.dummybuttonhilightedtext}>{resetState ? '' : currentExerciseRoutine}</Text>
+          </TouchableOpacity>
+          </View>
+          <Text style={styles.primaryBoldText}>
+            {resetState ? 'Hello!' : 'Workout Counts'}
+          </Text>
+          <Text style={styles.distext}>
+            {resetState ? "HSweat wants to assist you to become healthier and stronger! We're your digital personal trainer: as you workout, we'll keep track of your progress and recommend ways you can improve.\n\nBefore you start your exercise, make sure you attach your device to measure the workout correctly." : countOfExercise}
+          </Text>
+          <Text style={styles.primaryBoldText}>
+            {resetState ? '' : 'Recommendations'}
+          </Text>
+          <Text style={styles.distext}>
+            {resetState ? '' : displayImprovementFeedback }
           </Text>
       </View>
-      <Text style={styles.acctext}>
-          X: {round(x*adjustment_factor)}     Y: {round(y*adjustment_factor)}     Z: {round(z*adjustment_factor)}
-      </Text>
+      <View style={styles.buttonContainer}>
+          <TouchableOpacity onPress={this.toggleEx} style={styles.onoffbutton}>
+            <Text style={styles.onoffbuttonfont}>{isExercising ? '> PAUSE <' : 'Start Workout'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={this.resetEx} style={resetState ? styles.endbuttongrey : styles.endbuttonblue}>
+            <Text style={styles.endbuttonfont}> End </Text>
+          </TouchableOpacity>
+      </View>
     </View>
-    <Text style={styles.minitext}>
-        Accelerometer Data - Input: {accDataDump}
-    </Text>
-    <Text style={styles.minitext}>
-        Returned Classifications - Output: {round(returnedClassData[1-1])}  {round(returnedClassData[2-1])}  {round(returnedClassData[3-1])}  {round(returnedClassData[4-1])}  {round(returnedClassData[5-1])}  {round(returnedClassData[6-1])}  {round(returnedClassData[7-1])}  {round(returnedClassData[8-1])}  {round(returnedClassData[9-1])}  {round(returnedClassData[10-1])}  {round(returnedClassData[11-1])}  {round(returnedClassData[12-1])}
-    </Text>
   </View>
   );
 }
@@ -767,56 +774,120 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingTop: Constants.statusBarHeight,
-    backgroundColor: 'skyblue',
-    padding: 20,
+    backgroundColor: 'white',
+    padding: 0,
+    marginTop: 0,
+    marginLeft: 0,
+    marginRight: 0,
     marginBottom: 0,
   },
   outerContainer: {
     marginTop: 0,
     paddingTop: 0,
-    paddingHorizontal: 10,
+    paddingHorizontal: 0,
     backgroundColor: 'white',
-    borderRadius: 10,
+    borderRadius: 0,
+  },
+  connectedStatusContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 12,
+    paddingBottom: 6,
+    paddingLeft: 0,
+    paddingRight: 0,
+    backgroundColor: '#E4F4FA',
+    marginTop: 0,
+    marginLeft: 0,
+    marginRight: 0,
+    marginBottom: 0,
+    borderRadius: 0,
+  },
+  innerContainer: {
+    padding: 6,
+    backgroundColor: 'white',
+    marginTop: 0,
+    marginBottom: 5,
+    borderRadius: 0,
   },
   buttonContainer: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    marginTop: 15,
-  },
-  innerContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 5,
-    backgroundColor: 'lightblue',
-    marginTop: 5,
-    marginBottom: 5,
-    borderRadius: 20,
+    marginTop: 0,
+    paddingHorizontal: 0,
+    marginBottom: 10,
   },
   onoffbutton: {
-    flex: 1.5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'lightgreen',
-    padding: 20,
-    margin: 5,
-    marginTop: 0,
-    borderRadius: 10,
-  },
-  endbutton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'pink',
-    padding: 10,
+    backgroundColor: '#003370',
+    padding: 27,
     margin: 5,
     marginTop: 0,
-    borderRadius: 10,
+    borderRadius: 20,
+  },
+  endbuttongrey: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    textAlignVertical: 'center',
+    backgroundColor: '#CACACA',
+    padding: 27,
+    margin: 5,
+    marginTop: 0,
+    borderRadius: 20,
+  },
+  endbuttonblue: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    textAlignVertical: 'center',
+    backgroundColor: '#3AB1F3',
+    padding: 27,
+    margin: 5,
+    marginTop: 0,
+    borderRadius: 20,
   },
   onoffbuttonfont: {
     fontSize: 18,
+    color: 'white',
+    fontWeight: 'bold',
   },
   endbuttonfont: {
     fontSize: 18,
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  dummybuttonfortexthilight: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    textAlignVertical: 'center',
+    backgroundColor: '#E4F4FA',
+    paddingLeft: 20,
+    paddingRight: 20,
+    paddingTop: 10,
+    paddingBottom: 10,
+    margin: 0,
+    marginTop: 0,
+    marginLeft: 18,
+    borderRadius: 15,
+  },
+  dummybuttonhilightedtext: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  dummyblankwhitebutton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    textAlignVertical: 'center',
+    backgroundColor: 'white',
+    paddingLeft: 1,
+    paddingRight: 1,
+    paddingTop: 1,
+    paddingBottom: 1,
+    margin: 0,
+    marginTop: 0,
+    marginLeft: 18,
   },
   acctext: {
     marginBottom:2,
@@ -825,41 +896,65 @@ const styles = StyleSheet.create({
   webtext: {
     margin: 0,
     fontSize: 12,
-    textAlign: 'center',
+    textAlign: 'left',
   },
-  paragraph: {
+  primaryBoldText: {
     margin: 10,
-    marginTop: 10,
-    fontSize: 18,
+    marginTop: 5,
+    fontSize: 22,
     fontWeight: 'bold',
-    textAlign: 'center',
+    textAlign: 'left',
   },
   distext: {
     margin: 10,
     marginTop: 0,
     fontSize: 16,
-    fontWeight: 'italic',
-    textAlign: 'center',
+    textAlign: 'left',
+  },
+  distextblue: {
+    margin: 10,
+    marginTop: 0,
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'left',
+    color: '#2986c3',
   },
   minitext: {
     margin: 10,
     marginTop: 0,
     fontSize: 12,
     fontWeight: 'italic',
-    textAlign: 'center',
+    textAlign: 'left',
   },
   subtitletext: {
-    margin: 10,
+    margin: 0,
     marginTop: 0,
     fontSize: 18,
-    color: 'white',
+    color: 'grey',
+    textAlign: 'center',
+  },
+  superTitleText: {
+    margin: 0,
+    marginTop: 0,
+    marginBottom: 0,
+    fontSize: 18,
+    color: 'crimson',
     textAlign: 'center',
   },
   titletext: {
     margin: 10,
-    marginTop: 15,
-    marginBottom: 0,
-    fontSize: 45,
+    marginTop: 0,
+    marginBottom: 10,
+    fontSize: 34,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#2986c3',
+  },
+  titletextred: {
+    margin: 10,
+    marginTop: 0,
+    marginBottom: 10,
+    fontSize: 34,
     fontWeight: 'bold',
     textAlign: 'center',
     color: 'crimson',
@@ -875,25 +970,28 @@ const styles = StyleSheet.create({
     margin: 10,
     marginTop: 0,
     fontSize: 16,
-    color: 'green',
+    color: 'black',
     textAlign: 'center',
   },
-  positiontext: {
-    margin: 10,
+  deviceStatusText: {
+    margin: 15,
+    paddingTop: 0,
+    paddingBottom: 5,
     marginTop: 0,
     marginBottom: 0,
     fontSize: 16,
-    color: 'blue',
+    fontWeight: 'bold',
+    color: 'black',
     textAlign: 'center',
   },
   logo: {
     height: 60,
     width: 40,
-    borderRadius: 10, 
+    borderRadius: 10,
   },
     popupcontainer: {
     flex: 1,
     justifyContent: "space-around",
-    alignItems: "center"
+    alignItems: "left"
   }
 });

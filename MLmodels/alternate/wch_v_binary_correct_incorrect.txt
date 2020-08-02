@@ -1,0 +1,123 @@
+Creating job... OK (ID: 227700)
+
+Copying features from processing blocks...
+Copying features from processing blocks OK
+
+Job started
+Splitting data into training and validation sets...
+Splitting data into training and validation sets OK
+
+Training model...
+Training on 22419 inputs, validating on 5605 inputs
+Epoch 1/50
+701/701 - 11s - loss: 0.5798 - accuracy: 0.6652 - val_loss: 0.5324 - val_accuracy: 0.7206
+Epoch 2/50
+701/701 - 10s - loss: 0.5217 - accuracy: 0.7430 - val_loss: 0.5045 - val_accuracy: 0.7543
+Epoch 3/50
+701/701 - 11s - loss: 0.4973 - accuracy: 0.7673 - val_loss: 0.4836 - val_accuracy: 0.7763
+Epoch 4/50
+701/701 - 11s - loss: 0.4772 - accuracy: 0.7825 - val_loss: 0.4651 - val_accuracy: 0.7905
+Epoch 5/50
+701/701 - 10s - loss: 0.4601 - accuracy: 0.7977 - val_loss: 0.4490 - val_accuracy: 0.8168
+Epoch 6/50
+701/701 - 11s - loss: 0.4446 - accuracy: 0.8146 - val_loss: 0.4341 - val_accuracy: 0.8259
+Epoch 7/50
+701/701 - 10s - loss: 0.4304 - accuracy: 0.8231 - val_loss: 0.4205 - val_accuracy: 0.8312
+Epoch 8/50
+701/701 - 11s - loss: 0.4173 - accuracy: 0.8290 - val_loss: 0.4075 - val_accuracy: 0.8348
+Epoch 9/50
+701/701 - 11s - loss: 0.4052 - accuracy: 0.8331 - val_loss: 0.3956 - val_accuracy: 0.8369
+Epoch 10/50
+701/701 - 11s - loss: 0.3938 - accuracy: 0.8381 - val_loss: 0.3842 - val_accuracy: 0.8409
+Epoch 11/50
+701/701 - 11s - loss: 0.3830 - accuracy: 0.8431 - val_loss: 0.3733 - val_accuracy: 0.8467
+Epoch 12/50
+701/701 - 11s - loss: 0.3732 - accuracy: 0.8468 - val_loss: 0.3639 - val_accuracy: 0.8514
+Epoch 13/50
+701/701 - 10s - loss: 0.3643 - accuracy: 0.8502 - val_loss: 0.3552 - val_accuracy: 0.8548
+Epoch 14/50
+701/701 - 10s - loss: 0.3563 - accuracy: 0.8542 - val_loss: 0.3475 - val_accuracy: 0.8576
+Epoch 15/50
+701/701 - 11s - loss: 0.3489 - accuracy: 0.8573 - val_loss: 0.3401 - val_accuracy: 0.8614
+Epoch 16/50
+701/701 - 11s - loss: 0.3421 - accuracy: 0.8602 - val_loss: 0.3338 - val_accuracy: 0.8633
+Epoch 17/50
+701/701 - 10s - loss: 0.3359 - accuracy: 0.8633 - val_loss: 0.3280 - val_accuracy: 0.8655
+Epoch 18/50
+701/701 - 11s - loss: 0.3300 - accuracy: 0.8661 - val_loss: 0.3224 - val_accuracy: 0.8671
+Epoch 19/50
+701/701 - 11s - loss: 0.3248 - accuracy: 0.8680 - val_loss: 0.3172 - val_accuracy: 0.8707
+Epoch 20/50
+701/701 - 11s - loss: 0.3199 - accuracy: 0.8714 - val_loss: 0.3126 - val_accuracy: 0.8733
+Epoch 21/50
+701/701 - 10s - loss: 0.3153 - accuracy: 0.8732 - val_loss: 0.3080 - val_accuracy: 0.8762
+Epoch 22/50
+701/701 - 11s - loss: 0.3108 - accuracy: 0.8749 - val_loss: 0.3036 - val_accuracy: 0.8769
+Epoch 23/50
+701/701 - 11s - loss: 0.3069 - accuracy: 0.8765 - val_loss: 0.2995 - val_accuracy: 0.8787
+Epoch 24/50
+701/701 - 10s - loss: 0.3030 - accuracy: 0.8782 - val_loss: 0.2958 - val_accuracy: 0.8803
+Epoch 25/50
+701/701 - 11s - loss: 0.2994 - accuracy: 0.8793 - val_loss: 0.2921 - val_accuracy: 0.8819
+Epoch 26/50
+701/701 - 11s - loss: 0.2961 - accuracy: 0.8812 - val_loss: 0.2893 - val_accuracy: 0.8833
+Epoch 27/50
+701/701 - 10s - loss: 0.2930 - accuracy: 0.8823 - val_loss: 0.2861 - val_accuracy: 0.8855
+Epoch 28/50
+701/701 - 11s - loss: 0.2901 - accuracy: 0.8841 - val_loss: 0.2832 - val_accuracy: 0.8872
+Epoch 29/50
+701/701 - 11s - loss: 0.2873 - accuracy: 0.8853 - val_loss: 0.2805 - val_accuracy: 0.8878
+Epoch 30/50
+701/701 - 11s - loss: 0.2846 - accuracy: 0.8862 - val_loss: 0.2781 - val_accuracy: 0.8887
+Epoch 31/50
+701/701 - 10s - loss: 0.2820 - accuracy: 0.8871 - val_loss: 0.2754 - val_accuracy: 0.8906
+Epoch 32/50
+701/701 - 11s - loss: 0.2796 - accuracy: 0.8880 - val_loss: 0.2729 - val_accuracy: 0.8908
+Epoch 33/50
+701/701 - 10s - loss: 0.2773 - accuracy: 0.8888 - val_loss: 0.2708 - val_accuracy: 0.8910
+Epoch 34/50
+701/701 - 11s - loss: 0.2750 - accuracy: 0.8901 - val_loss: 0.2689 - val_accuracy: 0.8922
+Epoch 35/50
+701/701 - 11s - loss: 0.2728 - accuracy: 0.8910 - val_loss: 0.2668 - val_accuracy: 0.8933
+Epoch 36/50
+701/701 - 11s - loss: 0.2708 - accuracy: 0.8923 - val_loss: 0.2649 - val_accuracy: 0.8930
+Epoch 37/50
+701/701 - 11s - loss: 0.2688 - accuracy: 0.8928 - val_loss: 0.2629 - val_accuracy: 0.8938
+Epoch 38/50
+701/701 - 11s - loss: 0.2669 - accuracy: 0.8939 - val_loss: 0.2618 - val_accuracy: 0.8938
+Epoch 39/50
+701/701 - 11s - loss: 0.2650 - accuracy: 0.8940 - val_loss: 0.2601 - val_accuracy: 0.8940
+Epoch 40/50
+701/701 - 10s - loss: 0.2632 - accuracy: 0.8950 - val_loss: 0.2583 - val_accuracy: 0.8947
+Epoch 41/50
+701/701 - 11s - loss: 0.2613 - accuracy: 0.8959 - val_loss: 0.2566 - val_accuracy: 0.8963
+Epoch 42/50
+701/701 - 11s - loss: 0.2597 - accuracy: 0.8968 - val_loss: 0.2552 - val_accuracy: 0.8956
+Epoch 43/50
+701/701 - 10s - loss: 0.2581 - accuracy: 0.8973 - val_loss: 0.2545 - val_accuracy: 0.8955
+Epoch 44/50
+701/701 - 11s - loss: 0.2565 - accuracy: 0.8978 - val_loss: 0.2527 - val_accuracy: 0.8958
+Epoch 45/50
+701/701 - 11s - loss: 0.2550 - accuracy: 0.8985 - val_loss: 0.2512 - val_accuracy: 0.8969
+Epoch 46/50
+701/701 - 10s - loss: 0.2535 - accuracy: 0.8997 - val_loss: 0.2500 - val_accuracy: 0.8988
+Epoch 47/50
+701/701 - 10s - loss: 0.2520 - accuracy: 0.9003 - val_loss: 0.2488 - val_accuracy: 0.8994
+Epoch 48/50
+701/701 - 11s - loss: 0.2507 - accuracy: 0.9009 - val_loss: 0.2472 - val_accuracy: 0.9006
+Epoch 49/50
+701/701 - 11s - loss: 0.2492 - accuracy: 0.9020 - val_loss: 0.2464 - val_accuracy: 0.9015
+Epoch 50/50
+701/701 - 10s - loss: 0.2480 - accuracy: 0.9027 - val_loss: 0.2453 - val_accuracy: 0.9015
+Finished training
+
+Saving best performing model...
+Converting TensorFlow Lite float32 model...
+Converting TensorFlow Lite int8 quantized model...
+Calculating performance metrics...
+Profiling float32 model...
+Profiling int8 model...
+
+Model training complete
+
+Job complete
