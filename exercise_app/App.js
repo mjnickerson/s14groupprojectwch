@@ -7,10 +7,10 @@ import Constants from 'expo-constants';
 
 //////// DEMO MODE /////////////////////////////////////////////
 //run a simulation within the app or really connect to server?
-var runSim = true; //flag of "start exercising" running // DISCONNECTS THE APP FROM THE EC2 SERVER CURL PROXY and LOADS SIMULATED RANDOMIZED DATA
+var runSim = false; //flag of "start exercising" running // DISCONNECTS THE APP FROM THE EC2 SERVER CURL PROXY and LOADS SIMULATED RANDOMIZED DATA
 var rapidSim = false; //speed up the overall simulation (relies on simulatedRawReturnData);
-var rapidRandom = true; //randomly change classifications directly into engine, regardless of simulatedRawReturnData, to test configuration;
-var simWarning = false; //show a warning to the user its running in simulation mode?
+var rapidRandom = false; //randomly change classifications directly into engine, regardless of simulatedRawReturnData, to test configuration;
+var simWarning = true; //show a warning to the user its running in simulation mode?
 var timeTillNextRandomClass = (17); //seconds, actual desired time elapsed, till we randomly select new class; Used for diagonstrics;
 var simulatedReturnedSitupCount = 1; //how many situps to add per response period.
 var randomReturn = [];
