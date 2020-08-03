@@ -23,7 +23,7 @@ var randomReturn = [];
 
 ///// PRECISION THRESHOLD /////////////////////////////////////
 //threshold for classification - when are we unsure?
-var predictionCutoff = 0.25;
+var predictionCutoff = 0.30;
 
 ///////// TIME INTERVALS ///////////////////////////////
 //time variables
