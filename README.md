@@ -1,29 +1,29 @@
-# S-14 Group Project - West Coast Harvard
-
-**Home Gym Exercise Application**
 
 # S.W.E.A.T. (Software Wearable Exercise Application Tool)
 
-Description - This github repository contains all of the pieces to the SWEAT application  design by students in the Harvard S-14 class on Wearables.   The product loads a React-Native application on a phone (Android or Iphone) and allows the user to evaluate their exercise routine.  Currently the application is limited only to 2 types of situps, V-Situps and Pulse Situps, but the model can be trained to do other exercises.
+## S-14 Group Project - West Coast Harvard
 
-# Prerequisities
+This github repository contains all of the pieces to the SWEAT application  design by students in the Harvard S-14 class on Wearables.   The product loads a React-Native application on a phone (Android or Iphone) and allows the user to evaluate their exercise routine.  Currently the application is limited only to 2 types of situps, V-Situps and Pulse Situps, but the model can be trained to do other exercises.
 
-## snack.edge.io
+## Prerequisities
+
+### snack.edge.io
 
 - Account on snack.edge.io  or similar react-native platform
 
-## Web server accessable though port 5000
+### Web server accessable though port 5000
 
 - Ubuntu
 - Python3   minimum of Python 3.5
 - Flask python libraries
 - Nodejs (minimum of version 14)
 
-# Getting Started
+## Getting Started
 
-## Front End Application
 
 In order to begin, you need to take the Application code (which is a React-Native) code application and load it as a snack on snack.edge.io website. 
+
+Creata a back-end Linux  server to use as a web server and run the model application (We used Ubuntu on AWS)
 
 ## Installation
 
