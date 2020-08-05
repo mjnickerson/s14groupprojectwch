@@ -14,16 +14,13 @@ var simWarning = true; //show a warning to the user its running in simulation mo
 var timeTillNextRandomClass = (17); //seconds, actual desired time elapsed, till we randomly select new class; Used for diagonstrics;
 var simulatedReturnedSitupCount = 1; //how many situps to add per response period.
 var randomReturn = [];
-////////////////////////////////////////////////////////////////
 
-////////TEMPORARY VARIABLES FOR COUNTER - DELETE ME ////////////////
-//var simulatedRawReturnData = "{ anomaly: 0, results: [ { label: 'Class_1', value: 0.01359375 }, { label: 'Class_10', value: 0.1034375 }, { label: 'Class_11', value: 0.1178125 }, { label: 'Class_12', value: 0.1278125 }, { label: 'Class_2', value: 0.02546875 }, { label: 'Class_3', value: 0.0378125 }, { label: 'Class_4', value: 0.0434375 }, { label: 'Class_5', value: 0.0534375 }, { label: 'Class_6', value: 0.0646875 }, { label: 'Class_7', value: 0.0771875 }, { label: 'Class_8', value: 0.0846875 }, { label: 'Class_9', value: 0.0946875 }] }"
-//var simulatedReturnClasses = [(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12),(1/12)];
+
 ////////////////////////////////////////////////////////////////
 
 ///// PRECISION THRESHOLD /////////////////////////////////////
 //threshold for classification - when are we unsure?
-var predictionCutoff = 0.40;
+var predictionCutoff = 0.75;
 
 ///////// TIME INTERVALS ///////////////////////////////
 //time variables
