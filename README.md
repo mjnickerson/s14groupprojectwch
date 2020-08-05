@@ -5,6 +5,10 @@
 
 This github repository contains all of the pieces to the SWEAT application  design by students in the Harvard S-14 class on Wearables.   The product loads a React-Native application on a phone (Android or Iphone) and allows the user to evaluate their exercise routine.  Currently the application is limited only to 2 types of situps, V-Situps and Pulse Situps, but the model can be trained to do other exercises.
 
+## Demo Video Link
+
+See https://youtu.be/u_W4VkJsKNY for a video on application function. 
+
 ## Prerequisities
 
 ### snack.expo.io
