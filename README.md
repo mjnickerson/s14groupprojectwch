@@ -80,4 +80,4 @@ For the versions available see github
 
 * Susanne Chong 
 
-* Lucy Zhang
+* Lucy Chen Zhang
