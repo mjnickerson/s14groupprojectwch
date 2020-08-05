@@ -9,7 +9,7 @@ This github repository contains all of the pieces to the SWEAT application  desi
 
 ### snack.expo.io
 
-- Account on http://snack.io (snack.expo.io) or similar react-native platform
+- Account on https://www.expo.io (snack.expo.io)  or similar react-native platform
 
 ### Web server accessable though port 5000
 
@@ -76,8 +76,8 @@ For the versions available see github
 
 ## Acknowledgments
 
-- Jose Luis Ramirez Herran, Professor
+- Jose Luis Ramirez Herran, *Professor*
 
-* Suzsanne Chong , UX Design
+* Suzanne Chong, *UX Lead*
 
-* Lucy Chen Zhang, Testing Lead
+* Lucy Chen Zhang, *Testing Lead*
