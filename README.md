@@ -7,9 +7,9 @@ This github repository contains all of the pieces to the SWEAT application  desi
 
 ## Prerequisities
 
-### snack.edge.io
+### snack.expo.io
 
-- Account on snack.edge.io  or similar react-native platform
+- Account on https://www.expo.io (snack.expo.io)  or similar react-native platform
 
 ### Web server accessable though port 5000
 
@@ -70,14 +70,14 @@ For the versions available see github
 
 ## Authors
 
-* **Nicholas Pesce** - *Backend server/ Flask development*
-* **Micah Nickerson  - *Front end App development *
+* **Nicholas Pesce** - *Backend server/ Flask development Lead*
+* **Micah Nickerson**  - *Front end App development Lead*
 
 
 ## Acknowledgments
 
-- Jose Luis Ramirez Herran
+- Jose Luis Ramirez Herran, *Professor*
 
-* Susanne Chong 
+* Suzanne Chong, *UX Lead*
 
-* Lucy Chen Zhang
+* Lucy Chen Zhang, *Testing Lead*
