@@ -39,7 +39,7 @@ Create a new Snack and load the files in the github exercise_app directory into 
 - App.js in main directory structure
 - package.json in main directory structure
 
-### Back End WEb Server
+### Back End Web Server
 
 Once the snack app is installed,  go into the server_side direcotry in the git repository.
 you need to place the flask-working onto a directory (can be home directory) on your server
